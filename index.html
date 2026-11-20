@@ -187,20 +187,8 @@
     DEVICE ID: <span id="device-tag">...</span>
   </footer>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, update, push, set, onValue, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyC_vFU6eqql9sFm2XYkAh6aEIK6OonAQkQ",
-      authDomain: "polling-5868a.firebaseapp.com",
-      databaseURL: "https://polling-5868a-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "polling-5868a",
-      storageBucket: "polling-5868a.firebasestorage.app",
-      messagingSenderId: "916628617212",
-      appId: "1:916628617212:web:6b6f9997e58bf5edf22479",
-      measurementId: "G-BQ9FHMS2GG"
-    };
+  <script>
+    const DB_URL = "https://polling-5868a-default-rtdb.asia-southeast1.firebasedatabase.app";
 
     const ACCENTS = [
       { dot: "from-rose-500 to-orange-400", ring: "border-rose-400 bg-rose-500/15 shadow-lg shadow-rose-500/10" },
@@ -210,7 +198,6 @@
       { dot: "from-amber-400 to-yellow-300", ring: "border-amber-400 bg-amber-500/15 shadow-lg shadow-amber-500/10" }
     ];
 
-    /* Filter Kata Kasar Eksplisit (Indonesia & Inggris) — implisit/slang ringan seperti anjay/anjir tetap aman */
     const EXPLICIT_PROFANITY = [
       "anjing", "anjg", "njing", "anjink",
       "ngentot", "entot", "ngentod", "kentot",
@@ -248,13 +235,10 @@
       return false;
     }
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
     async function getOrCreateDeviceId() {
       let id = localStorage.getItem("itclub_device_uuid");
       if (!id) {
-        id = "dev_" + crypto.randomUUID().replace(/-/g, "").slice(0, 14);
+        id = "dev_" + (crypto.randomUUID ? crypto.randomUUID().replace(/-/g, "").slice(0, 14) : Math.random().toString(36).slice(2, 16));
         localStorage.setItem("itclub_device_uuid", id);
       }
       try {
@@ -273,17 +257,11 @@
       return id;
     }
 
-    const deviceId = await getOrCreateDeviceId();
-    document.getElementById("device-tag").textContent = deviceId.slice(4, 12).toUpperCase();
-
-    const savedDraftName = localStorage.getItem("itclub_username_draft") || "";
-    document.getElementById("username-input").value = savedDraftName;
-
+    let deviceId = "";
     let state = {
       config: { status: "waiting", showBars: true, roundId: "r1" },
       candidates: {},
-      voters: {},
-      comments: {}
+      serverVoterRec: null
     };
 
     let selectedId = null;
@@ -291,6 +269,7 @@
     let showVoterResults = false;
     let chatCooldownEnd = 0;
     let emojiCooldownEnd = 0;
+    let lastCandSignature = "";
 
     const esc = s => String(s || "").replace(/[&<>'"]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[m]));
 
@@ -306,8 +285,14 @@
       } catch { return null; }
     }
 
-    window.toggleVoterResults = () => {
+    window.toggleVoterResults = async () => {
       showVoterResults = !showVoterResults;
+      if (showVoterResults) {
+        try {
+          const res = await fetch(`${DB_URL}/candidates.json`);
+          if (res.ok) state.candidates = (await res.json()) || {};
+        } catch (_) {}
+      }
       render();
     };
 
@@ -319,10 +304,10 @@
       });
 
       const localRec = getLocalVoteRecord(roundId);
-      const dbRec = state.voters?.[deviceId];
+      const dbRec = state.serverVoterRec;
       const hasVoted = Boolean(localRec || dbRec);
       const chosenCandId = localRec?.candId || dbRec?.candId;
-      const voterName = localRec?.username || dbRec?.username || savedDraftName;
+      const voterName = localRec?.username || dbRec?.username || localStorage.getItem("itclub_username_draft") || "";
       const candName = state.candidates?.[chosenCandId]?.name;
 
       if (status === "ended") {
@@ -469,26 +454,53 @@
       }
 
       isSubmitting = true;
-      const roundId = state.config.roundId || "r1";
-      localStorage.setItem("itclub_username_draft", username);
-      localStorage.setItem("itclub_voted_record", JSON.stringify({ roundId, candId, colorIdx, username }));
-      if (navigator.vibrate) navigator.vibrate(65);
       render();
 
       try {
-        await update(ref(db), {
-          [`candidates/${candId}/votes`]: increment(1),
-          [`voters/${deviceId}`]: { username, candId, colorIdx, at: Date.now() }
+        // 1. Kunci perangkat terlebih dahulu (anti double-vote jika cache dibersihkan)
+        const voterRes = await fetch(`${DB_URL}/voters/${deviceId}.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username,
+            candId,
+            colorIdx,
+            at: { ".sv": "timestamp" }
+          })
         });
+
+        if (!voterRes.ok) {
+          // Jika ditolak Rules (!data.exists()), berarti perangkat ini sudah pernah memilih
+          const existingRes = await fetch(`${DB_URL}/voters/${deviceId}.json`);
+          if (existingRes.ok) {
+            state.serverVoterRec = await existingRes.json();
+          }
+          isSubmitting = false;
+          render();
+          return;
+        }
+
+        // 2. Tambah suara secara atomik di server Firebase
+        await fetch(`${DB_URL}/candidates/${candId}/votes.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ".sv": { "increment": 1 } })
+        });
+
+        const roundId = state.config.roundId || "r1";
+        const rec = { roundId, candId, colorIdx, username };
+        state.serverVoterRec = rec;
+        localStorage.setItem("itclub_username_draft", username);
+        localStorage.setItem("itclub_voted_record", JSON.stringify(rec));
+        if (navigator.vibrate) navigator.vibrate(65);
       } catch (err) {
-        alert(`Gagal mengirim suara: ${err?.code || err?.message}`);
+        alert("Koneksi kurang stabil, silakan ketuk sekali lagi untuk mengunci suara.");
       } finally {
         isSubmitting = false;
         render();
       }
     };
 
-    /* Emoji dengan cooldown 3 detik & langsung muncul seketika */
     window.sendEmoji = (emoji, ev) => {
       if (state.config.status !== "voting") return;
       if (Date.now() < emojiCooldownEnd) return;
@@ -496,7 +508,6 @@
       emojiCooldownEnd = Date.now() + 3000;
       if (navigator.vibrate) navigator.vibrate(20);
 
-      // Efek langsung di layar HP pemilih
       if (ev && ev.currentTarget) {
         const rect = ev.currentTarget.getBoundingClientRect();
         const pop = document.createElement("div");
@@ -508,13 +519,16 @@
         setTimeout(() => pop.remove(), 850);
       }
 
-      set(ref(db, "reaction"), {
-        emoji,
-        id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+      fetch(`${DB_URL}/reaction.json`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          emoji,
+          id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+        })
       }).catch(() => {});
     };
 
-    /* Komentar bubble mandiri dengan cooldown 5 detik + blokir kata kasar eksplisit */
     function pushBubbleText(rawText) {
       if (state.config.status !== "voting") return;
       if (Date.now() < chatCooldownEnd) return;
@@ -538,18 +552,20 @@
       document.getElementById("msg-input").value = "";
       chatCooldownEnd = Date.now() + 5000;
 
-      const rec = getLocalVoteRecord(state.config.roundId);
-      const colorIdx = rec?.colorIdx ?? state.voters?.[deviceId]?.colorIdx ?? 0;
-      const user = rec?.username || state.voters?.[deviceId]?.username || localStorage.getItem("itclub_username_draft") || "Anggota";
+      const rec = getLocalVoteRecord(state.config.roundId) || state.serverVoterRec;
+      const colorIdx = rec?.colorIdx ?? 0;
+      const user = rec?.username || localStorage.getItem("itclub_username_draft") || "Anggota";
 
-      push(ref(db, "comments"), {
-        user: user.slice(0, 22),
-        text,
-        colorIdx,
-        at: Date.now()
-      }).catch(err => {
-        alert(`Gagal kirim komentar: ${err?.code || err?.message}`);
-      });
+      fetch(`${DB_URL}/comments.json`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user: user.slice(0, 22),
+          text,
+          colorIdx,
+          at: { ".sv": "timestamp" }
+        })
+      }).catch(() => {});
     }
 
     window.quickBubble = (preset) => pushBubbleText(preset);
@@ -559,7 +575,42 @@
       pushBubbleText(document.getElementById("msg-input").value);
     };
 
-    /* Timer live untuk cooldown 3s Emoji & 5s Komentar */
+    /* Sinkronisasi ringan berbasis REST API (0 slot WebSocket terpakai) */
+    async function syncState(includeCandidates = true) {
+      try {
+        const cfgRes = await fetch(`${DB_URL}/config.json`);
+        if (cfgRes.ok) {
+          const cfg = await cfgRes.json();
+          if (cfg) {
+            const oldRound = state.config.roundId;
+            state.config = { status: "waiting", showBars: true, roundId: "r1", ...cfg };
+            if (oldRound && oldRound !== state.config.roundId) {
+              state.serverVoterRec = null;
+              selectedId = null;
+            }
+          }
+        }
+
+        const localRec = getLocalVoteRecord(state.config.roundId);
+        const alreadyLocked = Boolean(localRec || state.serverVoterRec);
+
+        if (includeCandidates || (!alreadyLocked && state.config.status !== "ended")) {
+          const candRes = await fetch(`${DB_URL}/candidates.json`);
+          if (candRes.ok) {
+            const cands = (await candRes.json()) || {};
+            const sig = Object.entries(cands).map(([k, v]) => `${k}:${v.name}:${v.desc}`).join("|");
+            state.candidates = cands;
+            if (sig !== lastCandSignature) {
+              lastCandSignature = sig;
+              render();
+              return;
+            }
+          }
+        }
+        render();
+      } catch (_) {}
+    }
+
     setInterval(() => {
       const now = Date.now();
 
@@ -593,27 +644,23 @@
       }
     }, 250);
 
-    onValue(ref(db), snap => {
-      const val = snap.val();
-      if (!val) {
-        render();
-        return;
-      }
-      state = {
-        config: {
-          status: "waiting",
-          showBars: true,
-          roundId: "r1",
-          ...(val.config || {})
-        },
-        candidates: val.candidates || {},
-        voters: val.voters || {},
-        comments: val.comments || {}
-      };
-      render();
-    });
+    (async () => {
+      deviceId = await getOrCreateDeviceId();
+      document.getElementById("device-tag").textContent = deviceId.slice(4, 12).toUpperCase();
+      document.getElementById("username-input").value = localStorage.getItem("itclub_username_draft") || "";
 
-    render();
+      try {
+        const vRes = await fetch(`${DB_URL}/voters/${deviceId}.json`);
+        if (vRes.ok) state.serverVoterRec = await vRes.json();
+      } catch (_) {}
+
+      await syncState(true);
+
+      // Cek status sesi tiap 3.5 detik secara ringan
+      setInterval(() => {
+        if (state.config.status !== "ended") syncState(false);
+      }, 3500);
+    })();
   </script>
 </body>
 </html>
