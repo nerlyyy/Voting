@@ -456,45 +456,59 @@
       isSubmitting = true;
       render();
 
+      const roundId = state.config.roundId || "r1";
+      const rec = {
+        roundId,
+        username,
+        candId,
+        colorIdx,
+        at: { ".sv": "timestamp" }
+      };
+
       try {
-        // 1. Kunci perangkat terlebih dahulu (anti double-vote jika cache dibersihkan)
-        const voterRes = await fetch(`${DB_URL}/voters/${deviceId}.json`, {
-          method: "PUT",
+        // Satu PATCH multi-location: voter lock + penambahan tally harus berhasil bersama.
+        // Jika salah satu ditolak Firebase Rules, keduanya batal (tidak ada suara setengah masuk).
+        const voteRes = await fetch(`${DB_URL}/.json`, {
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            username,
-            candId,
-            colorIdx,
-            at: { ".sv": "timestamp" }
+            [`voters/${deviceId}`]: rec,
+            [`candidates/${candId}/votes`]: { ".sv": { "increment": 1 } }
           })
         });
 
-        if (!voterRes.ok) {
-          // Jika ditolak Rules (!data.exists()), berarti perangkat ini sudah pernah memilih
-          const existingRes = await fetch(`${DB_URL}/voters/${deviceId}.json`);
-          if (existingRes.ok) {
-            state.serverVoterRec = await existingRes.json();
-          }
-          isSubmitting = false;
-          render();
-          return;
+        if (!voteRes.ok) {
+          throw new Error(`Firebase menolak voting (HTTP ${voteRes.status}).`);
         }
 
-        // 2. Tambah suara secara atomik di server Firebase
-        await fetch(`${DB_URL}/candidates/${candId}/votes.json`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ".sv": { "increment": 1 } })
-        });
-
-        const roundId = state.config.roundId || "r1";
-        const rec = { roundId, candId, colorIdx, username };
         state.serverVoterRec = rec;
+        const localRec = { roundId, candId, colorIdx, username };
         localStorage.setItem("itclub_username_draft", username);
-        localStorage.setItem("itclub_voted_record", JSON.stringify(rec));
+        localStorage.setItem("itclub_voted_record", JSON.stringify(localRec));
         if (navigator.vibrate) navigator.vibrate(65);
       } catch (err) {
-        alert("Koneksi kurang stabil, silakan ketuk sekali lagi untuk mengunci suara.");
+        // Jika respons PATCH hilang setelah server sebenarnya menyimpan vote,
+        // baca voter record. Ini juga menangani percobaan ulang dari perangkat yang sudah vote.
+        let existing = null;
+        try {
+          const existingRes = await fetch(`${DB_URL}/voters/${deviceId}.json`);
+          if (existingRes.ok) existing = await existingRes.json();
+        } catch (_) {}
+
+        if (existing) {
+          state.serverVoterRec = existing;
+          const savedRec = {
+            roundId: existing.roundId || roundId,
+            candId: existing.candId,
+            colorIdx: existing.colorIdx ?? colorIdx,
+            username: existing.username || username
+          };
+          localStorage.setItem("itclub_username_draft", savedRec.username);
+          localStorage.setItem("itclub_voted_record", JSON.stringify(savedRec));
+        } else {
+          console.error("Gagal mengirim vote:", err);
+          alert("Suara belum dapat dikonfirmasi. Periksa koneksi lalu coba lagi. Jika jaringan tadi sempat terputus, sistem akan mengecek apakah suara sebenarnya sudah tersimpan.");
+        }
       } finally {
         isSubmitting = false;
         render();
