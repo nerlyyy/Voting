@@ -23,6 +23,18 @@
       75% { transform: translateX(6px); }
     }
     .input-shake { animation: shakeInput 0.28s ease-in-out 2; border-color: #f43f5e !important; }
+
+    @keyframes localEmojiPop {
+      0% { transform: translateY(0) scale(0.7); opacity: 1; }
+      100% { transform: translateY(-90px) scale(1.4); opacity: 0; }
+    }
+    .local-emoji-burst {
+      position: fixed;
+      pointer-events: none;
+      z-index: 50;
+      font-size: 2rem;
+      animation: localEmojiPop 0.85s ease-out forwards;
+    }
   </style>
 </head>
 <body class="min-h-[100dvh] flex flex-col justify-between p-4 sm:p-5 max-w-md mx-auto select-none">
@@ -62,15 +74,18 @@
           oninput="saveUsernameDraft(this.value)"
           class="w-full bg-black/60 border border-white/15 focus:border-indigo-400 outline-none rounded-2xl px-4 py-3 text-sm font-bold text-white placeholder:text-slate-600 transition"
         />
-        <p id="user-error" class="hidden text-[11px] text-rose-400 font-semibold">
-          Isi nama atau kelas kamu dulu sebelum memilih kandidat!
-        </p>
+        <p id="user-error" class="hidden text-[11px] text-rose-400 font-semibold"></p>
       </div>
 
       <div class="space-y-2.5">
-        <div class="flex items-center justify-between px-1">
-          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">2. Ketuk Kandidat Pilihanmu</span>
-          <span class="text-[10px] text-slate-500">1 Device = 1 Suara</span>
+        <div class="px-1 space-y-0.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-300">2. Ketuk 2x untuk Kunci Voting</span>
+            <span class="text-[10px] text-slate-500">1 Device = 1 Suara</span>
+          </div>
+          <p class="text-[11px] text-indigo-300/90">
+            Pastikan klik <strong>2 kali</strong> pada kandidat pilihanmu untuk mengunci suara.
+          </p>
         </div>
         <div id="candidates-container" class="space-y-3"></div>
       </div>
@@ -89,23 +104,23 @@
         <p id="choice-summary" class="text-xs text-slate-300 leading-relaxed"></p>
       </div>
 
-      <!-- Dock Reaksi Emoji -->
+      <!-- Dock Reaksi Emoji (Cooldown 3 Detik) -->
       <div class="p-4 rounded-3xl bg-white/[0.04] border border-white/10 space-y-2.5">
         <div class="flex items-center justify-between">
           <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Terbangkan Reaksi</p>
-          <span class="text-[10px] text-slate-500">Muncul di proyektor</span>
+          <span id="emoji-cd-label" class="mono text-[11px] text-emerald-400">Siap kirim</span>
         </div>
-        <div class="grid grid-cols-3 gap-2">
-          <button type="button" onclick="sendEmoji('🔥')" class="tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center">🔥</button>
-          <button type="button" onclick="sendEmoji('🚀')" class="tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center">🚀</button>
-          <button type="button" onclick="sendEmoji('👏')" class="tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center">👏</button>
-          <button type="button" onclick="sendEmoji('⚡')" class="tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center">⚡</button>
-          <button type="button" onclick="sendEmoji('👑')" class="tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center">👑</button>
-          <button type="button" onclick="sendEmoji('🎉')" class="tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center">🎉</button>
+        <div id="emoji-grid" class="grid grid-cols-3 gap-2">
+          <button type="button" onclick="sendEmoji('🔥', event)" class="emoji-btn tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center disabled:opacity-40">🔥</button>
+          <button type="button" onclick="sendEmoji('🚀', event)" class="emoji-btn tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center disabled:opacity-40">🚀</button>
+          <button type="button" onclick="sendEmoji('👏', event)" class="emoji-btn tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center disabled:opacity-40">👏</button>
+          <button type="button" onclick="sendEmoji('⚡', event)" class="emoji-btn tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center disabled:opacity-40">⚡</button>
+          <button type="button" onclick="sendEmoji('👑', event)" class="emoji-btn tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center disabled:opacity-40">👑</button>
+          <button type="button" onclick="sendEmoji('🎉', event)" class="emoji-btn tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center disabled:opacity-40">🎉</button>
         </div>
       </div>
 
-      <!-- Dock Bubble Komentar -->
+      <!-- Dock Bubble Komentar (Cooldown 5 Detik + Filter Kata Kasar Eksplisit) -->
       <div class="p-4 rounded-3xl bg-white/[0.04] border border-white/10 space-y-3">
         <div class="flex items-center justify-between">
           <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Bubble Komentar Live</p>
@@ -113,18 +128,20 @@
         </div>
 
         <div class="flex gap-1.5 overflow-x-auto pb-0.5">
-          <button type="button" onclick="quickBubble('Gas menyala! 🔥')" class="tap-btn shrink-0 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-slate-200">Gas menyala! 🔥</button>
-          <button type="button" onclick="quickBubble('Ketuaku nih! 👑')" class="tap-btn shrink-0 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-slate-200">Ketuaku nih! 👑</button>
-          <button type="button" onclick="quickBubble('Keren abis! 🚀')" class="tap-btn shrink-0 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-slate-200">Keren abis! 🚀</button>
+          <button type="button" onclick="quickBubble('Gas menyala! 🔥')" class="quick-chat-btn tap-btn shrink-0 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-slate-200 disabled:opacity-40">Gas menyala! 🔥</button>
+          <button type="button" onclick="quickBubble('Ketuaku nih! 👑')" class="quick-chat-btn tap-btn shrink-0 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-slate-200 disabled:opacity-40">Ketuaku nih! 👑</button>
+          <button type="button" onclick="quickBubble('Keren abis! 🚀')" class="quick-chat-btn tap-btn shrink-0 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-slate-200 disabled:opacity-40">Keren abis! 🚀</button>
         </div>
 
         <form onsubmit="sendBubble(event)" class="flex items-center gap-2">
-          <input id="msg-input" type="text" maxlength="65" placeholder="Tulis pesan singkat..."
+          <input id="msg-input" type="text" maxlength="65" placeholder="Tulis pesan dukungan..."
+            oninput="document.getElementById('chat-error').classList.add('hidden')"
             class="flex-1 min-w-0 bg-black/60 border border-white/15 focus:border-white/40 outline-none rounded-2xl px-3.5 py-3 text-sm text-white placeholder:text-slate-600" />
           <button id="msg-btn" type="submit" class="tap-btn px-4 py-3 rounded-2xl bg-white text-slate-950 font-extrabold text-xs shrink-0 disabled:opacity-40">
             Kirim
           </button>
         </form>
+        <p id="chat-error" class="hidden text-[11px] text-rose-400 font-semibold"></p>
       </div>
     </div>
 
@@ -135,19 +152,33 @@
       <p class="text-xs text-slate-400">Voting belum dimulai. Perhatikan layar proyektor di depan.</p>
     </div>
 
-    <!-- 4. LAYAR VOTING DITUTUP -->
-    <div id="view-ended" class="hidden p-7 rounded-3xl bg-gradient-to-b from-rose-500/15 via-slate-900/90 to-slate-950 border border-rose-500/30 text-center space-y-3 shadow-2xl">
+    <!-- 4. LAYAR VOTING DITUTUP + TOMBOL LIHAT HASIL -->
+    <div id="view-ended" class="hidden p-7 rounded-3xl bg-gradient-to-b from-rose-500/15 via-slate-900/90 to-slate-950 border border-rose-500/30 text-center space-y-4 shadow-2xl">
       <div class="text-4xl">🏁</div>
-      <span class="inline-block px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 text-[11px] font-extrabold uppercase tracking-wider">
-        Voting Resmi Ditutup
-      </span>
-      <h2 class="font-display text-xl font-bold text-white">Lihat Pengumuman di Layar!</h2>
-      <p class="text-xs text-slate-300 leading-relaxed">
-        Podium pemenang dan Ketua IT Club terpilih sedang ditampilkan di layar proyektor.
-      </p>
-      <div id="ended-receipt" class="hidden pt-2">
+      <div class="space-y-1.5">
+        <span class="inline-block px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 text-[11px] font-extrabold uppercase tracking-wider">
+          Voting Resmi Ditutup
+        </span>
+        <h2 class="font-display text-xl font-bold text-white">Pemilihan Telah Selesai!</h2>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Perhatikan layar proyektor atau tekan tombol di bawah untuk melihat hasil akhir.
+        </p>
+      </div>
+
+      <div id="ended-receipt" class="hidden">
         <div class="p-3 rounded-2xl bg-black/50 border border-white/10 text-xs text-slate-300"></div>
       </div>
+
+      <button
+        type="button"
+        id="voter-see-results-btn"
+        onclick="toggleVoterResults()"
+        class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-display font-extrabold text-sm shadow-lg shadow-amber-400/25 active:scale-95 transition"
+      >
+        🏆 Lihat Hasil
+      </button>
+
+      <div id="voter-results-box" class="hidden text-left space-y-2 pt-1"></div>
     </div>
 
   </main>
@@ -178,6 +209,44 @@
       { dot: "from-emerald-500 to-teal-300", ring: "border-emerald-400 bg-emerald-500/15 shadow-lg shadow-emerald-500/10" },
       { dot: "from-amber-400 to-yellow-300", ring: "border-amber-400 bg-amber-500/15 shadow-lg shadow-amber-500/10" }
     ];
+
+    /* Filter Kata Kasar Eksplisit (Indonesia & Inggris) — implisit/slang ringan seperti anjay/anjir tetap aman */
+    const EXPLICIT_PROFANITY = [
+      "anjing", "anjg", "njing", "anjink",
+      "ngentot", "entot", "ngentod", "kentot",
+      "memek", "mmk", "memeq",
+      "kontol", "kntl", "kontl",
+      "jembut", "jmbt",
+      "pepek", "ppk",
+      "perek", "lonte", "pelacur", "jablay",
+      "bangsat", "bgst", "bangsad",
+      "bajingan", "keparat",
+      "tai", "taik",
+      "colmek", "coli", "bokep",
+      "fuck", "fck", "motherfucker", "bitch", "dick", "pussy", "cunt", "asshole", "nigger", "nigga"
+    ];
+
+    function containsExplicitProfanity(text) {
+      const normalized = String(text || "")
+        .toLowerCase()
+        .replace(/0/g, "o")
+        .replace(/1/g, "i")
+        .replace(/3/g, "e")
+        .replace(/4/g, "a")
+        .replace(/5/g, "s")
+        .replace(/7/g, "t")
+        .replace(/@/g, "a")
+        .replace(/\$/g, "s");
+
+      const words = normalized.split(/[^a-z]+/).filter(Boolean);
+      for (const w of words) {
+        const collapsed = w.replace(/(.)\1{2,}/g, "$1");
+        if (EXPLICIT_PROFANITY.includes(w) || EXPLICIT_PROFANITY.includes(collapsed)) {
+          return true;
+        }
+      }
+      return false;
+    }
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
@@ -219,8 +288,9 @@
 
     let selectedId = null;
     let isSubmitting = false;
-    let lastChat = 0;
-    let lastEmoji = 0;
+    let showVoterResults = false;
+    let chatCooldownEnd = 0;
+    let emojiCooldownEnd = 0;
 
     const esc = s => String(s || "").replace(/[&<>'"]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[m]));
 
@@ -235,6 +305,11 @@
         return raw && raw.roundId === roundId ? raw : null;
       } catch { return null; }
     }
+
+    window.toggleVoterResults = () => {
+      showVoterResults = !showVoterResults;
+      render();
+    };
 
     function render() {
       const { status, roundId } = state.config;
@@ -261,6 +336,36 @@
           receiptEl.firstElementChild.innerHTML = `Pemilih: <strong class="text-white">${esc(voterName)}</strong> • Pilihan: <strong class="text-emerald-400">${esc(candName)}</strong>`;
         } else {
           receiptEl.classList.add("hidden");
+        }
+
+        const resBtn = document.getElementById("voter-see-results-btn");
+        const resBox = document.getElementById("voter-results-box");
+        resBtn.textContent = showVoterResults ? "▲ Sembunyikan Hasil" : "🏆 Lihat Hasil";
+        resBox.classList.toggle("hidden", !showVoterResults);
+
+        if (showVoterResults) {
+          const entries = Object.entries(state.candidates || {})
+            .map(([id, c], i) => ({ id, name: c.name, votes: c.votes || 0, idx: i }))
+            .sort((a, b) => b.votes - a.votes || a.idx - b.idx);
+          const total = entries.reduce((s, x) => s + x.votes, 0);
+
+          resBox.innerHTML = entries.map((item, r) => {
+            const pct = total > 0 ? Math.round((item.votes / total) * 100) : 0;
+            const isWin = r === 0 && total > 0;
+            return `
+              <div class="p-3 rounded-2xl border ${isWin ? 'bg-amber-500/15 border-amber-400/50' : 'bg-black/45 border-white/10'} flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="font-display font-extrabold text-xs ${isWin ? 'text-amber-300' : 'text-slate-400'}">
+                    ${isWin ? '👑' : `#${r + 1}`}
+                  </span>
+                  <span class="font-bold text-xs text-white truncate">${esc(item.name)}</span>
+                </div>
+                <span class="mono text-xs font-extrabold ${isWin ? 'text-amber-300' : 'text-slate-300'} shrink-0">
+                  ${pct}% (${item.votes})
+                </span>
+              </div>
+            `;
+          }).join("");
         }
         return;
       }
@@ -312,14 +417,16 @@
               </div>
               <div class="min-w-0">
                 <div class="font-extrabold text-base text-white truncate">${esc(c.name)}</div>
-                <div class="text-xs text-slate-400 truncate mt-0.5">${esc(c.desc || "")}</div>
+                <div class="text-xs text-slate-400 truncate mt-0.5">
+                  ${isConfirming ? '<span class="text-amber-300 font-bold">Klik 1x lagi untuk mengunci!</span>' : esc(c.desc || "Ketuk 2x untuk memilih")}
+                </div>
               </div>
             </div>
 
             <span class="px-3.5 py-2 rounded-2xl text-xs font-extrabold shrink-0 transition ${
-              isConfirming ? 'bg-white text-slate-950 shadow-md' : 'bg-white/10 text-slate-200'
+              isConfirming ? 'bg-white text-slate-950 shadow-md animate-pulse' : 'bg-white/10 text-slate-200'
             }">
-              ${isConfirming ? (isSubmitting ? 'Mengirim...' : 'Kunci Suara ✓') : 'Pilih'}
+              ${isConfirming ? (isSubmitting ? 'Mengirim...' : 'Kunci Suara ✓') : 'Pilih (1/2)'}
             </span>
           </button>
         `;
@@ -330,10 +437,12 @@
       if (state.config.status !== "voting" || isSubmitting) return;
 
       const userInput = document.getElementById("username-input");
+      const userErr = document.getElementById("user-error");
       const username = userInput.value.trim().slice(0, 22);
+
       if (!username) {
-        const err = document.getElementById("user-error");
-        err.classList.remove("hidden");
+        userErr.textContent = "Isi nama atau kelas kamu dulu sebelum memilih kandidat!";
+        userErr.classList.remove("hidden");
         userInput.classList.remove("input-shake");
         void userInput.offsetWidth;
         userInput.classList.add("input-shake");
@@ -342,9 +451,19 @@
         return;
       }
 
+      if (containsExplicitProfanity(username)) {
+        userErr.textContent = "Nama mengandung kata kasar eksplisit. Gunakan nama asli/kelas yang sopan.";
+        userErr.classList.remove("hidden");
+        userInput.classList.remove("input-shake");
+        void userInput.offsetWidth;
+        userInput.classList.add("input-shake");
+        userInput.focus();
+        return;
+      }
+
       if (selectedId !== candId) {
         selectedId = candId;
-        if (navigator.vibrate) navigator.vibrate(20);
+        if (navigator.vibrate) navigator.vibrate(25);
         render();
         return;
       }
@@ -369,37 +488,66 @@
       }
     };
 
-    window.sendEmoji = (emoji) => {
+    /* Emoji dengan cooldown 3 detik & langsung muncul seketika */
+    window.sendEmoji = (emoji, ev) => {
       if (state.config.status !== "voting") return;
-      if (Date.now() - lastEmoji < 600) return;
-      lastEmoji = Date.now();
+      if (Date.now() < emojiCooldownEnd) return;
+
+      emojiCooldownEnd = Date.now() + 3000;
       if (navigator.vibrate) navigator.vibrate(20);
-      set(ref(db, "reaction"), { emoji, id: Date.now() + Math.random() }).catch(() => {});
+
+      // Efek langsung di layar HP pemilih
+      if (ev && ev.currentTarget) {
+        const rect = ev.currentTarget.getBoundingClientRect();
+        const pop = document.createElement("div");
+        pop.className = "local-emoji-burst";
+        pop.textContent = emoji;
+        pop.style.left = `${rect.left + rect.width / 2 - 16}px`;
+        pop.style.top = `${rect.top}px`;
+        document.body.appendChild(pop);
+        setTimeout(() => pop.remove(), 850);
+      }
+
+      set(ref(db, "reaction"), {
+        emoji,
+        id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+      }).catch(() => {});
     };
 
+    /* Komentar bubble mandiri dengan cooldown 5 detik + blokir kata kasar eksplisit */
     function pushBubbleText(rawText) {
       if (state.config.status !== "voting") return;
-      if (Date.now() - lastChat < 2500) return;
+      if (Date.now() < chatCooldownEnd) return;
+
       const text = rawText.trim().slice(0, 65);
       if (!text) return;
 
-      lastChat = Date.now();
-      const btn = document.getElementById("msg-btn");
-      const cd = document.getElementById("cd-label");
-      btn.disabled = true;
-      cd.textContent = "Tunggu 2.5d";
-      cd.className = "mono text-[11px] text-amber-400";
-      setTimeout(() => {
-        btn.disabled = false;
-        cd.textContent = "Siap kirim";
-        cd.className = "mono text-[11px] text-emerald-400";
-      }, 2500);
+      const chatErr = document.getElementById("chat-error");
+      if (containsExplicitProfanity(text)) {
+        chatErr.textContent = "Komentar diblokir karena mengandung kata kasar eksplisit.";
+        chatErr.classList.remove("hidden");
+        const inputEl = document.getElementById("msg-input");
+        inputEl.classList.remove("input-shake");
+        void inputEl.offsetWidth;
+        inputEl.classList.add("input-shake");
+        if (navigator.vibrate) navigator.vibrate([40, 40]);
+        return;
+      }
+
+      chatErr.classList.add("hidden");
+      document.getElementById("msg-input").value = "";
+      chatCooldownEnd = Date.now() + 5000;
 
       const rec = getLocalVoteRecord(state.config.roundId);
       const colorIdx = rec?.colorIdx ?? state.voters?.[deviceId]?.colorIdx ?? 0;
       const user = rec?.username || state.voters?.[deviceId]?.username || localStorage.getItem("itclub_username_draft") || "Anggota";
 
-      push(ref(db, "comments"), { user: user.slice(0, 22), text, colorIdx }).catch(err => {
+      push(ref(db, "comments"), {
+        user: user.slice(0, 22),
+        text,
+        colorIdx,
+        at: Date.now()
+      }).catch(err => {
         alert(`Gagal kirim komentar: ${err?.code || err?.message}`);
       });
     }
@@ -408,11 +556,42 @@
 
     window.sendBubble = (e) => {
       e.preventDefault();
-      const input = document.getElementById("msg-input");
-      const val = input.value;
-      input.value = "";
-      pushBubbleText(val);
+      pushBubbleText(document.getElementById("msg-input").value);
     };
+
+    /* Timer live untuk cooldown 3s Emoji & 5s Komentar */
+    setInterval(() => {
+      const now = Date.now();
+
+      const emojiRem = Math.ceil((emojiCooldownEnd - now) / 1000);
+      const emojiCd = document.getElementById("emoji-cd-label");
+      const emojiBtns = document.querySelectorAll(".emoji-btn");
+      if (emojiRem > 0) {
+        emojiCd.textContent = `Tunggu ${emojiRem}d`;
+        emojiCd.className = "mono text-[11px] text-amber-400";
+        emojiBtns.forEach(b => b.disabled = true);
+      } else {
+        emojiCd.textContent = "Siap kirim";
+        emojiCd.className = "mono text-[11px] text-emerald-400";
+        emojiBtns.forEach(b => b.disabled = false);
+      }
+
+      const chatRem = Math.ceil((chatCooldownEnd - now) / 1000);
+      const chatCd = document.getElementById("cd-label");
+      const msgBtn = document.getElementById("msg-btn");
+      const quickBtns = document.querySelectorAll(".quick-chat-btn");
+      if (chatRem > 0) {
+        chatCd.textContent = `Tunggu ${chatRem}d`;
+        chatCd.className = "mono text-[11px] text-amber-400";
+        msgBtn.disabled = true;
+        quickBtns.forEach(b => b.disabled = true);
+      } else {
+        chatCd.textContent = "Siap kirim";
+        chatCd.className = "mono text-[11px] text-emerald-400";
+        msgBtn.disabled = false;
+        quickBtns.forEach(b => b.disabled = false);
+      }
+    }, 250);
 
     onValue(ref(db), snap => {
       const val = snap.val();
