@@ -96,12 +96,12 @@
           <span class="text-[10px] text-slate-500">Muncul di proyektor</span>
         </div>
         <div class="grid grid-cols-3 gap-2">
-          <button onclick="sendEmoji('🔥')" class="tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center">🔥</button>
-          <button onclick="sendEmoji('🚀')" class="tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center">🚀</button>
-          <button onclick="sendEmoji('👏')" class="tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center">👏</button>
-          <button onclick="sendEmoji('⚡')" class="tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center">⚡</button>
-          <button onclick="sendEmoji('👑')" class="tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center">👑</button>
-          <button onclick="sendEmoji('🎉')" class="tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center">🎉</button>
+          <button type="button" onclick="sendEmoji('🔥')" class="tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center">🔥</button>
+          <button type="button" onclick="sendEmoji('🚀')" class="tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center">🚀</button>
+          <button type="button" onclick="sendEmoji('👏')" class="tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center">👏</button>
+          <button type="button" onclick="sendEmoji('⚡')" class="tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center">⚡</button>
+          <button type="button" onclick="sendEmoji('👑')" class="tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center">👑</button>
+          <button type="button" onclick="sendEmoji('🎉')" class="tap-btn py-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-white/10 text-2xl flex items-center justify-center">🎉</button>
         </div>
       </div>
 
@@ -121,7 +121,7 @@
         <form onsubmit="sendBubble(event)" class="flex items-center gap-2">
           <input id="msg-input" type="text" maxlength="65" placeholder="Tulis pesan singkat..."
             class="flex-1 min-w-0 bg-black/60 border border-white/15 focus:border-white/40 outline-none rounded-2xl px-3.5 py-3 text-sm text-white placeholder:text-slate-600" />
-          <button id="msg-btn" class="tap-btn px-4 py-3 rounded-2xl bg-white text-slate-950 font-extrabold text-xs shrink-0 disabled:opacity-40">
+          <button id="msg-btn" type="submit" class="tap-btn px-4 py-3 rounded-2xl bg-white text-slate-950 font-extrabold text-xs shrink-0 disabled:opacity-40">
             Kirim
           </button>
         </form>
@@ -163,12 +163,12 @@
     const firebaseConfig = {
       apiKey: "AIzaSyC_vFU6eqql9sFm2XYkAh6aEIK6OonAQkQ",
       authDomain: "polling-5868a.firebaseapp.com",
-      // Server Singapore (default Indonesia). Ubah ke .firebaseio.com jika RTDB kamu di US
       databaseURL: "https://polling-5868a-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "polling-5868a",
       storageBucket: "polling-5868a.firebasestorage.app",
       messagingSenderId: "916628617212",
-      appId: "1:916628617212:web:6b6f9997e58bf5edf22479"
+      appId: "1:916628617212:web:6b6f9997e58bf5edf22479",
+      measurementId: "G-BQ9FHMS2GG"
     };
 
     const ACCENTS = [
@@ -350,38 +350,34 @@
       }
 
       isSubmitting = true;
+      const roundId = state.config.roundId || "r1";
+      localStorage.setItem("itclub_username_draft", username);
+      localStorage.setItem("itclub_voted_record", JSON.stringify({ roundId, candId, colorIdx, username }));
+      if (navigator.vibrate) navigator.vibrate(65);
       render();
 
       try {
-        const roundId = state.config.roundId || "r1";
         await update(ref(db), {
           [`candidates/${candId}/votes`]: increment(1),
           [`voters/${deviceId}`]: { username, candId, colorIdx, at: Date.now() }
         });
-
-        if (navigator.vibrate) navigator.vibrate(65);
-        localStorage.setItem("itclub_username_draft", username);
-        localStorage.setItem("itclub_voted_record", JSON.stringify({ roundId, candId, colorIdx, username }));
-        render();
       } catch (err) {
-        alert(`Gagal mengirim suara: ${err?.code || err?.message || "Periksa koneksi / Firebase Rules"}`);
+        alert(`Gagal mengirim suara: ${err?.code || err?.message}`);
       } finally {
         isSubmitting = false;
         render();
       }
     };
 
-    window.sendEmoji = async (emoji) => {
+    window.sendEmoji = (emoji) => {
       if (state.config.status !== "voting") return;
       if (Date.now() - lastEmoji < 600) return;
       lastEmoji = Date.now();
       if (navigator.vibrate) navigator.vibrate(20);
-      try {
-        await set(ref(db, "reaction"), { emoji, id: Date.now() + Math.random() });
-      } catch (_) {}
+      set(ref(db, "reaction"), { emoji, id: Date.now() + Math.random() }).catch(() => {});
     };
 
-    async function pushBubbleText(rawText) {
+    function pushBubbleText(rawText) {
       if (state.config.status !== "voting") return;
       if (Date.now() - lastChat < 2500) return;
       const text = rawText.trim().slice(0, 65);
@@ -403,11 +399,9 @@
       const colorIdx = rec?.colorIdx ?? state.voters?.[deviceId]?.colorIdx ?? 0;
       const user = rec?.username || state.voters?.[deviceId]?.username || localStorage.getItem("itclub_username_draft") || "Anggota";
 
-      try {
-        await push(ref(db, "comments"), { user: user.slice(0, 22), text, colorIdx });
-      } catch (err) {
+      push(ref(db, "comments"), { user: user.slice(0, 22), text, colorIdx }).catch(err => {
         alert(`Gagal kirim komentar: ${err?.code || err?.message}`);
-      }
+      });
     }
 
     window.quickBubble = (preset) => pushBubbleText(preset);
@@ -427,7 +421,12 @@
         return;
       }
       state = {
-        config: val.config || { status: "waiting", showBars: true, roundId: "r1" },
+        config: {
+          status: "waiting",
+          showBars: true,
+          roundId: "r1",
+          ...(val.config || {})
+        },
         candidates: val.candidates || {},
         voters: val.voters || {},
         comments: val.comments || {}
