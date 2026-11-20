@@ -62,35 +62,38 @@
     }
     .bar-surge { animation: surgeGlow 0.55s ease-out; }
 
+    /* Bubble komentar melayang terpisah & berhenti memudar sebelum menyentuh header */
     @keyframes floatBubble {
-      0% { transform: translateY(25px) scale(0.88); opacity: 0; }
-      10% { opacity: 0.92; transform: translateY(0) scale(1); }
-      82% { opacity: 0.72; }
-      100% { transform: translateY(-86vh) scale(0.95); opacity: 0; }
+      0% { transform: translateY(20px) scale(0.85); opacity: 0; }
+      12% { opacity: 0.95; transform: translateY(0) scale(1); }
+      78% { opacity: 0.8; }
+      100% { transform: translateY(-68vh) scale(0.96); opacity: 0; }
     }
     .ghost-bubble {
       position: fixed;
-      bottom: 24px;
       pointer-events: none;
-      z-index: 40;
-      background: rgba(12, 15, 24, 0.42);
-      backdrop-filter: blur(5px);
-      -webkit-backdrop-filter: blur(5px);
-      animation: floatBubble 7.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      z-index: 25;
+      background: rgba(12, 15, 24, 0.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      animation: floatBubble 7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
+    /* Emoji langsung terbang & pudar sebelum header */
     @keyframes floatEmoji {
-      0% { transform: translateY(20px) scale(0.7) rotate(-8deg); opacity: 0; }
-      15% { opacity: 1; transform: translateY(-15px) scale(1.2) rotate(6deg); }
-      100% { transform: translateY(-82vh) scale(1.4) rotate(-8deg); opacity: 0; }
+      0% { transform: translateY(15px) scale(0.6) rotate(-10deg); opacity: 0; }
+      14% { opacity: 1; transform: translateY(-12px) scale(1.25) rotate(8deg); }
+      80% { opacity: 0.9; }
+      100% { transform: translateY(-66vh) scale(1.35) rotate(-6deg); opacity: 0; }
     }
     .floating-emoji {
       position: fixed;
-      bottom: 20px;
+      bottom: 24px;
       pointer-events: none;
-      z-index: 41;
-      font-size: 2.6rem;
-      animation: floatEmoji 2.8s ease-out forwards;
+      z-index: 26;
+      font-size: 2.7rem;
+      filter: drop-shadow(0 6px 14px rgba(0,0,0,0.45));
+      animation: floatEmoji 2.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     @keyframes sparkPop {
@@ -103,34 +106,64 @@
       height: 7px;
       border-radius: 9999px;
       pointer-events: none;
-      z-index: 45;
+      z-index: 28;
       animation: sparkPop 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
+    /* Animasi Podium Pemenang Khusus */
     @keyframes podiumRise {
-      0% { transform: translateY(110%); opacity: 0; }
-      100% { transform: translateY(0); opacity: 1; }
+      0% { transform: translateY(115%) scaleY(0.8); opacity: 0; }
+      75% { transform: translateY(-3%) scaleY(1.02); opacity: 1; }
+      100% { transform: translateY(0) scaleY(1); opacity: 1; }
     }
-    @keyframes winnerPop {
-      0% { transform: scale(0.6) translateY(20px); opacity: 0; }
-      70% { transform: scale(1.06) translateY(-4px); opacity: 1; }
-      100% { transform: scale(1) translateY(0); opacity: 1; }
+    @keyframes cardEntrance {
+      0% { transform: translateY(24px) scale(0.78); opacity: 0; }
+      70% { transform: translateY(-5px) scale(1.04); opacity: 1; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
     }
-    .podium-pillar-3 { animation: podiumRise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both; }
-    .podium-pillar-2 { animation: podiumRise 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both; }
-    .podium-pillar-1 { animation: podiumRise 0.85s cubic-bezier(0.16, 1, 0.3, 1) 1.05s both; }
-    .winner-card-reveal { animation: winnerPop 0.65s cubic-bezier(0.16, 1, 0.3, 1) 1.45s both; }
-    .runner-card-reveal { animation: winnerPop 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.85s both; }
+    @keyframes crownDrop {
+      0% { transform: translateY(-36px) scale(0.4) rotate(-18deg); opacity: 0; }
+      65% { transform: translateY(4px) scale(1.15) rotate(6deg); opacity: 1; }
+      100% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+    }
+    @keyframes lightSweep {
+      0% { transform: translateX(-140%) skewX(-20deg); }
+      100% { transform: translateX(240%) skewX(-20deg); }
+    }
+    @keyframes pulseRing {
+      0%, 100% { box-shadow: 0 0 30px rgba(251, 191, 36, 0.25), inset 0 0 20px rgba(251, 191, 36, 0.15); }
+      50% { box-shadow: 0 0 60px rgba(251, 191, 36, 0.5), inset 0 0 30px rgba(251, 191, 36, 0.28); }
+    }
+
+    .podium-pillar-3 { animation: podiumRise 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both; }
+    .podium-card-3   { animation: cardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both; }
+
+    .podium-pillar-2 { animation: podiumRise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.75s both; }
+    .podium-card-2   { animation: cardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) 1.05s both; }
+
+    .podium-pillar-1 {
+      animation: podiumRise 0.95s cubic-bezier(0.16, 1, 0.3, 1) 1.4s both, pulseRing 2.6s ease-in-out 2.4s infinite;
+    }
+    .podium-card-1   { animation: cardEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1) 1.8s both; }
+    .crown-drop-anim { animation: crownDrop 0.75s cubic-bezier(0.16, 1, 0.3, 1) 2.15s both; }
+
+    .winner-shimmer::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
+      animation: lightSweep 2.4s ease-in-out 2.3s infinite;
+    }
   </style>
 </head>
-<body class="h-screen flex flex-col justify-between p-5 sm:p-8 cyber-grid select-none relative">
+<body class="h-screen flex flex-col p-5 sm:p-7 cyber-grid select-none relative">
 
   <!-- Ambient Spotlight -->
-  <div id="orb-left" class="ambient-orb fixed -top-32 -left-24 w-[480px] h-[480px] rounded-full opacity-25 pointer-events-none" style="background: #6366f1;"></div>
-  <div id="orb-right" class="ambient-orb fixed -bottom-36 -right-24 w-[460px] h-[460px] rounded-full opacity-20 pointer-events-none" style="background: #06b6d4;"></div>
+  <div id="orb-left" class="ambient-orb fixed -top-32 -left-24 w-[460px] h-[460px] rounded-full opacity-25 pointer-events-none" style="background: #6366f1;"></div>
+  <div id="orb-right" class="ambient-orb fixed -bottom-36 -right-24 w-[440px] h-[440px] rounded-full opacity-20 pointer-events-none" style="background: #06b6d4;"></div>
 
   <!-- Layer Gelembung Komentar & Emoji -->
-  <div id="bubble-stage" class="fixed inset-0 pointer-events-none overflow-hidden z-40"></div>
+  <div id="bubble-stage" class="fixed inset-0 pointer-events-none overflow-hidden z-20"></div>
 
   <!-- Banner Error Firebase -->
   <div id="fb-alert-banner" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-[60] max-w-xl w-[92%] p-3.5 rounded-2xl bg-rose-950/95 border border-rose-500 text-rose-100 text-xs shadow-2xl flex items-center justify-between gap-3">
@@ -138,10 +171,10 @@
     <button type="button" onclick="document.getElementById('fb-alert-banner').classList.add('hidden')" class="px-2.5 py-1 rounded-lg bg-rose-500/30 font-bold shrink-0">✕</button>
   </div>
 
-  <!-- HEADER -->
-  <header class="relative z-30 max-w-6xl w-full mx-auto flex flex-wrap items-center justify-between gap-4">
-    <div class="flex items-center gap-4">
-      <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md flex items-center justify-center font-display font-bold text-xl tracking-tighter text-white shadow-lg">
+  <!-- HEADER (Strict z-30, terpisah jelas dari area panggung utama) -->
+  <header class="relative z-30 shrink-0 max-w-6xl w-full mx-auto flex flex-wrap items-center justify-between gap-4 pb-3">
+    <div class="flex items-center gap-3.5">
+      <div class="w-11 h-11 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md flex items-center justify-center font-display font-bold text-lg tracking-tighter text-white shadow-lg">
         IT
       </div>
       <div>
@@ -153,7 +186,7 @@
             Menunggu suara...
           </span>
         </div>
-        <h1 class="font-display text-2xl sm:text-3xl font-bold tracking-tight mt-0.5 text-white">
+        <h1 class="font-display text-xl sm:text-3xl font-bold tracking-tight mt-0.5 text-white">
           Pemilihan Ketua IT Club
         </h1>
       </div>
@@ -188,23 +221,57 @@
     </div>
   </header>
 
-  <!-- MAIN STAGE -->
-  <main class="relative z-20 max-w-6xl w-full mx-auto my-auto py-4 flex-1 flex flex-col justify-center min-h-0">
-    <div id="race-stage" class="w-full">
+  <!-- MAIN STAGE (Bounded agar tidak pernah bertabrakan dengan header) -->
+  <main class="relative z-10 max-w-6xl w-full mx-auto flex-1 min-h-0 flex flex-col justify-center overflow-hidden">
+
+    <!-- STAGE 1: LIVE RACE BARS -->
+    <div id="race-stage" class="w-full my-auto">
       <div id="race-container" class="relative w-full"></div>
     </div>
 
-    <div id="podium-stage" class="hidden w-full h-full flex flex-col justify-end items-center pt-4">
-      <div id="podium-grid" class="w-full max-w-4xl grid grid-cols-3 gap-3 sm:gap-6 items-end h-[430px] sm:h-[470px] px-2"></div>
-    </div>
-  </main>
+    <!-- STAGE 2: GERBANG TOMBOL LIHAT HASIL (SAAT VOTING DITUTUP) -->
+    <div id="closed-gate-stage" class="hidden w-full my-auto flex flex-col items-center justify-center text-center px-4">
+      <div class="max-w-lg w-full p-8 sm:p-10 rounded-3xl bg-slate-900/80 border border-white/15 backdrop-blur-xl shadow-2xl space-y-5">
+        <div class="w-16 h-16 mx-auto rounded-2xl bg-rose-500/20 border border-rose-400/40 flex items-center justify-center text-3xl shadow-lg shadow-rose-500/10">
+          🏁
+        </div>
+        <div class="space-y-1.5">
+          <span class="inline-block px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 text-[11px] font-extrabold uppercase tracking-widest">
+            Pemungutan Suara Selesai
+          </span>
+          <h2 class="font-display text-2xl sm:text-3xl font-bold text-white">
+            Semua Suara Telah Dikunci!
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400">
+            Tekan tombol di bawah untuk membuka podium pemenang Ketua IT Club.
+          </p>
+        </div>
 
-  <!-- FOOTER -->
-  <footer class="relative z-30 max-w-6xl w-full mx-auto flex items-center justify-between text-xs text-slate-500">
-    <span id="fb-conn-status" class="mono text-[11px] text-amber-400">● Menghubungkan Firebase...</span>
-    <span class="hidden sm:inline text-slate-500">1 Perangkat = 1 Suara • Komentar melayang transparan di layar</span>
-    <span id="join-hint" class="mono text-slate-400"></span>
-  </footer>
+        <div class="pt-1 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button
+            type="button"
+            onclick="revealPodiumNow()"
+            class="w-full sm:w-auto px-7 py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:brightness-110 text-slate-950 font-display font-extrabold text-sm sm:text-base tracking-wide shadow-[0_0_35px_rgba(251,191,36,0.45)] transition transform hover:scale-[1.03] active:scale-95"
+          >
+            🏆 Lihat Hasil Pemenang
+          </button>
+          <button
+            type="button"
+            onclick="revealBarsOnEnd()"
+            class="w-full sm:w-auto px-5 py-4 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-bold text-xs sm:text-sm transition"
+          >
+            📊 Lihat Semua Bar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STAGE 3: PODIUM PEMENANG (SAFE BOUNDED HEIGHT) -->
+    <div id="podium-stage" class="hidden w-full h-full flex flex-col justify-end items-center pt-4 pb-2">
+      <div id="podium-grid" class="w-full max-w-4xl grid grid-cols-3 gap-3 sm:gap-7 items-end h-full max-h-[74vh] px-2"></div>
+    </div>
+
+  </main>
 
   <!-- MODAL QR CODE -->
   <div id="qr-modal" onclick="toggleQr()" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
@@ -218,7 +285,7 @@
     </div>
   </div>
 
-  <!-- DRAWER PANEL PANITIA ADVANCE -->
+  <!-- DRAWER PANEL PANITIA -->
   <div id="admin-drawer" onclick="toggleDrawer()" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden justify-end">
     <div onclick="event.stopPropagation()" class="w-full max-w-lg bg-slate-950 border-l border-white/10 h-full flex flex-col">
 
@@ -266,7 +333,7 @@
           </div>
         </div>
 
-        <!-- 2. TAMBAH KANDIDAT (PLAYER MODE) -->
+        <!-- 2. TAMBAH KANDIDAT -->
         <div class="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
           <div>
             <label class="text-[11px] font-bold text-indigo-300 uppercase tracking-wider block">2. Tambah Kandidat (Player)</label>
@@ -294,7 +361,7 @@
           </div>
         </div>
 
-        <!-- 3. DAFTAR KANDIDAT & MANUAL VOTE (+1 / -1 BLIND VOTING) -->
+        <!-- 3. DAFTAR KANDIDAT & MANUAL VOTE -->
         <div class="space-y-2.5">
           <div class="flex items-center justify-between px-1">
             <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">3. Kandidat & Blind Voting (-1 / +1)</label>
@@ -308,7 +375,7 @@
           </p>
         </div>
 
-        <!-- 4. ZONA RESET (TERPISAH) -->
+        <!-- 4. ZONA RESET -->
         <div class="p-4 rounded-2xl bg-rose-950/20 border border-rose-500/25 space-y-3">
           <div>
             <label class="text-[11px] font-bold text-rose-400 uppercase tracking-wider block">4. Reset Voting (Terpisah)</label>
@@ -363,16 +430,16 @@
     };
 
     let sfxOn = true;
-    let isConnected = false;
     let prevVotes = {};
     let renderedSignature = "";
     let podiumSignature = "";
-    let showAllBarsOnEnd = false;
+    let endViewMode = "gate"; // "gate" | "podium" | "bars"
     let prevStatus = "";
     let seenComments = new Set();
+    let sessionOpenedAt = Date.now();
     let firstLoad = true;
-    let lastEmojiId = null;
-    let lane = 0;
+    let lastEmojiId = undefined;
+    let bubbleSlot = 0;
 
     const esc = s => String(s || "").replace(/[&<>'"]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[m]));
 
@@ -393,12 +460,12 @@
       if (!sfxOn) return;
       if (audioCtx.state === "suspended") audioCtx.resume();
       const now = audioCtx.currentTime;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
 
       if (type === "vote") {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
         osc.type = "triangle";
         osc.frequency.setValueAtTime(480, now);
         osc.frequency.exponentialRampToValueAtTime(920, now + 0.14);
@@ -406,43 +473,63 @@
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
         osc.start(now);
         osc.stop(now + 0.18);
+      } else if (type === "drumroll") {
+        [180, 220, 260, 320].forEach((f, idx) => {
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.type = "sine";
+          o.connect(g);
+          g.connect(audioCtx.destination);
+          o.frequency.setValueAtTime(f, now + idx * 0.35);
+          g.gain.setValueAtTime(0.14, now + idx * 0.35);
+          g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.35 + 0.3);
+          o.start(now + idx * 0.35);
+          o.stop(now + idx * 0.35 + 0.3);
+        });
       } else if (type === "win") {
-        [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
+        [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, idx) => {
           const o = audioCtx.createOscillator();
           const g = audioCtx.createGain();
           o.type = "triangle";
           o.connect(g);
           g.connect(audioCtx.destination);
-          o.frequency.setValueAtTime(f, now + idx * 0.09);
-          g.gain.setValueAtTime(0.18, now + idx * 0.09);
-          g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.4);
-          o.start(now + idx * 0.09);
-          o.stop(now + idx * 0.09 + 0.4);
+          o.frequency.setValueAtTime(f, now + idx * 0.085);
+          g.gain.setValueAtTime(0.18, now + idx * 0.085);
+          g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.085 + 0.45);
+          o.start(now + idx * 0.085);
+          o.stop(now + idx * 0.085 + 0.45);
         });
       }
     }
 
     const voterUrl = window.location.origin + window.location.pathname.replace(/\/host(\.html)?$/, "/");
-    document.getElementById("join-hint").textContent = voterUrl.replace(/^https?:\/\//, "");
     document.getElementById("qr-link").textContent = voterUrl;
     document.getElementById("qr-img").src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(voterUrl)}`;
 
     onValue(ref(db, ".info/connected"), snap => {
-      isConnected = snap.val() === true;
-      const el = document.getElementById("fb-conn-status");
+      const connected = snap.val() === true;
       const pill = document.getElementById("drawer-conn-pill");
-
-      if (isConnected) {
-        el.textContent = "● Firebase Live Terhubung (Singapore)";
-        el.className = "mono text-[11px] text-emerald-400";
+      if (connected) {
         pill.textContent = "● LIVE CONNECTED";
         pill.className = "mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30";
         document.getElementById("fb-alert-banner").classList.add("hidden");
       } else {
-        el.textContent = "● Menghubungkan ke Firebase...";
-        el.className = "mono text-[11px] text-amber-400";
         pill.textContent = "● CONNECTING...";
         pill.className = "mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30";
+      }
+    });
+
+    /* Listener khusus untuk Emoji Reaction agar langsung muncul seketika */
+    onValue(ref(db, "reaction"), snap => {
+      const val = snap.val();
+      if (!val || !val.id) return;
+      if (lastEmojiId === undefined) {
+        lastEmojiId = val.id;
+        return;
+      }
+      if (val.id !== lastEmojiId) {
+        lastEmojiId = val.id;
+        spawnEmoji(val.emoji);
       }
     });
 
@@ -556,9 +643,30 @@
       podiumSignature = sig;
 
       const slots = [
-        { rank: 2, item: top3[1], pillarH: "h-48 sm:h-56", pillarBg: "from-slate-400/30 to-slate-600/20 border-slate-400/40", animPillar: "podium-pillar-2", animCard: "runner-card-reveal" },
-        { rank: 1, item: top3[0], pillarH: "h-64 sm:h-72", pillarBg: "from-amber-400/35 via-yellow-500/20 to-amber-600/10 border-amber-400/60 shadow-[0_0_50px_rgba(251,191,36,0.25)]", animPillar: "podium-pillar-1", animCard: "winner-card-reveal" },
-        { rank: 3, item: top3[2], pillarH: "h-36 sm:h-44", pillarBg: "from-orange-500/25 to-amber-800/15 border-orange-400/35", animPillar: "podium-pillar-3", animCard: "runner-card-reveal" }
+        {
+          rank: 2,
+          item: top3[1],
+          pillarH: "h-[21vh] min-h-[120px] max-h-44",
+          pillarBg: "from-slate-300/30 to-slate-600/20 border-slate-300/45",
+          animPillar: "podium-pillar-2",
+          animCard: "podium-card-2"
+        },
+        {
+          rank: 1,
+          item: top3[0],
+          pillarH: "h-[29vh] min-h-[165px] max-h-56",
+          pillarBg: "from-amber-400/40 via-yellow-500/25 to-amber-700/15 border-amber-300/70 winner-shimmer",
+          animPillar: "podium-pillar-1",
+          animCard: "podium-card-1"
+        },
+        {
+          rank: 3,
+          item: top3[2],
+          pillarH: "h-[15vh] min-h-[92px] max-h-32",
+          pillarBg: "from-orange-500/30 to-amber-900/20 border-orange-400/40",
+          animPillar: "podium-pillar-3",
+          animCard: "podium-card-3"
+        }
       ];
 
       document.getElementById("podium-grid").innerHTML = slots.map(slot => {
@@ -569,16 +677,16 @@
         const isChampion = rank === 1;
 
         return `
-          <div class="flex flex-col items-center justify-end h-full">
-            <div class="${slot.animCard} w-full mb-3 text-center space-y-1.5 px-1">
+          <div class="flex flex-col items-center justify-end h-full min-h-0">
+            <div class="${slot.animCard} w-full mb-2.5 text-center space-y-1 px-1">
               ${isChampion ? `
-                <div class="text-4xl sm:text-5xl animate-bounce drop-shadow">👑</div>
-                <span class="inline-block px-3 py-1 rounded-full bg-amber-400 text-slate-950 font-extrabold text-[10px] sm:text-xs tracking-wider uppercase shadow-lg shadow-amber-400/30">
+                <div class="crown-drop-anim text-3xl sm:text-4xl drop-shadow leading-none">👑</div>
+                <span class="inline-block px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 font-extrabold text-[10px] sm:text-xs tracking-wider uppercase shadow-lg shadow-amber-400/30">
                   KETUA IT CLUB
                 </span>
               ` : ''}
 
-              <h3 class="font-display font-bold ${isChampion ? 'text-xl sm:text-2xl text-white' : 'text-base sm:text-lg text-slate-200'} truncate">
+              <h3 class="font-display font-bold ${isChampion ? 'text-lg sm:text-2xl text-white' : 'text-sm sm:text-lg text-slate-200'} truncate">
                 ${esc(item.name)}
               </h3>
               <div class="mono text-xs sm:text-sm font-extrabold ${isChampion ? 'text-amber-300' : th.text}">
@@ -586,8 +694,8 @@
               </div>
             </div>
 
-            <div class="${slot.animPillar} w-full ${slot.pillarH} rounded-t-3xl bg-gradient-to-b ${slot.pillarBg} border-t-2 border-x backdrop-blur-md flex flex-col items-center justify-start pt-5 relative overflow-hidden">
-              <div class="font-display font-extrabold ${isChampion ? 'text-6xl sm:text-7xl text-amber-300' : 'text-4xl sm:text-5xl text-white/40'}">
+            <div class="${slot.animPillar} w-full ${slot.pillarH} rounded-t-3xl bg-gradient-to-b ${slot.pillarBg} border-t-2 border-x backdrop-blur-md flex flex-col items-center justify-start pt-4 relative overflow-hidden">
+              <div class="font-display font-extrabold ${isChampion ? 'text-5xl sm:text-6xl text-amber-300' : 'text-3xl sm:text-5xl text-white/45'}">
                 ${rank}
               </div>
             </div>
@@ -612,9 +720,8 @@
 
       if (status !== prevStatus) {
         if (status === "ended") {
-          showAllBarsOnEnd = false;
+          endViewMode = "gate";
           podiumSignature = "";
-          if (!firstLoad) setTimeout(() => celebrate(), 1150);
         }
         prevStatus = status;
       }
@@ -637,13 +744,23 @@
         ? [...indexed].sort((a, b) => b.votes - a.votes || a.originalIdx - b.originalIdx)
         : indexed;
 
-      const isPodiumActive = status === "ended" && !showAllBarsOnEnd && sorted.length > 0;
-      document.getElementById("race-stage").classList.toggle("hidden", isPodiumActive);
-      document.getElementById("podium-stage").classList.toggle("hidden", !isPodiumActive);
-      endBtn.classList.toggle("hidden", status !== "ended");
-      endBtn.textContent = showAllBarsOnEnd ? "🏆 Kembali ke Podium" : "📊 Lihat Semua Bar";
+      const showGate = status === "ended" && endViewMode === "gate";
+      const showPodium = status === "ended" && endViewMode === "podium" && sorted.length > 0;
+      const showRace = !showGate && !showPodium;
 
-      if (isPodiumActive) {
+      document.getElementById("closed-gate-stage").classList.toggle("hidden", !showGate);
+      document.getElementById("podium-stage").classList.toggle("hidden", !showPodium);
+      document.getElementById("race-stage").classList.toggle("hidden", !showRace);
+
+      endBtn.classList.toggle("hidden", status !== "ended" || endViewMode === "gate");
+      endBtn.textContent = endViewMode === "podium" ? "📊 Lihat Semua Bar" : "🏆 Kembali ke Podium";
+
+      if (showGate) {
+        document.getElementById("drama-pill").textContent = "🏁 Voting ditutup — Klik Lihat Hasil";
+        return;
+      }
+
+      if (showPodium) {
         document.getElementById("drama-pill").textContent = `🏆 Selamat kepada ${sorted[0].name}!`;
         document.getElementById("orb-left").style.background = "#f59e0b";
         renderPodium(sorted, total);
@@ -775,15 +892,19 @@
       container.style.height = `${Math.max(currentY - gap, 100)}px`;
     }
 
+    /* Setiap komentar selalu menjadi bubble mandiri & tidak pernah menumpuk dalam satu bubble */
     function spawnBubble(user, text, colorIdx = 0) {
       const th = THEMES[colorIdx % THEMES.length];
       const el = document.createElement("div");
-      el.className = `ghost-bubble px-4 py-2 rounded-full border ${th.border} flex items-center gap-2 max-w-xs sm:max-w-md shadow-lg`;
+      el.className = `ghost-bubble px-4 py-2 rounded-full border ${th.border} flex items-center gap-2 max-w-xs sm:max-w-md shadow-xl`;
 
-      const lanes = [6, 28, 52, 70];
-      const leftPos = lanes[lane % lanes.length] + (Math.random() * 5 - 2.5);
-      lane++;
-      el.style.left = `${Math.max(4, Math.min(72, leftPos))}%`;
+      const leftColumns = [4, 24, 44, 62, 14, 34, 54];
+      const leftPos = leftColumns[bubbleSlot % leftColumns.length] + (Math.random() * 4 - 2);
+      const bottomOffset = 18 + (bubbleSlot % 3) * 18;
+      bubbleSlot++;
+
+      el.style.left = `${Math.max(3, Math.min(70, leftPos))}%`;
+      el.style.bottom = `${bottomOffset}px`;
 
       const safeUser = user ? `<span class="font-extrabold ${th.text} shrink-0">${esc(user)}:</span>` : "";
 
@@ -795,17 +916,44 @@
         </div>
       `;
       document.getElementById("bubble-stage").appendChild(el);
-      setTimeout(() => el.remove(), 7500);
+      setTimeout(() => el.remove(), 7000);
     }
 
     function spawnEmoji(emoji) {
       const el = document.createElement("div");
       el.className = "floating-emoji";
       el.textContent = emoji;
-      el.style.left = `${10 + Math.random() * 80}%`;
+      el.style.left = `${8 + Math.random() * 82}%`;
       document.getElementById("bubble-stage").appendChild(el);
-      setTimeout(() => el.remove(), 2800);
+      setTimeout(() => el.remove(), 2600);
     }
+
+    // ==================== REVEAL HASIL AKHIR ====================
+    window.revealPodiumNow = () => {
+      endViewMode = "podium";
+      podiumSignature = "";
+      playSfx("drumroll");
+      render();
+      setTimeout(() => celebrate(), 1850);
+    };
+
+    window.revealBarsOnEnd = () => {
+      endViewMode = "bars";
+      renderedSignature = "";
+      render();
+    };
+
+    window.toggleEndView = () => {
+      if (endViewMode === "podium") {
+        endViewMode = "bars";
+        renderedSignature = "";
+      } else {
+        endViewMode = "podium";
+        podiumSignature = "";
+        setTimeout(() => celebrate(), 1850);
+      }
+      render();
+    };
 
     // ==================== ADMIN FUNCTIONS ====================
     window.updateCandPreview = (raw) => {
@@ -873,7 +1021,6 @@
       remove(ref(db, `candidates/${id}`)).catch(handleFbError);
     };
 
-    // Pakai update() per cabang agar sesuai Rules Firebase
     window.resetVotesOnly = () => {
       if (!confirm("Reset semua suara menjadi 0 dan buka kembali kunci seluruh HP?\n(Daftar kandidat tidak akan dihapus)")) return;
       const resetCands = {};
@@ -883,7 +1030,9 @@
       const newRound = `r_${Date.now()}`;
       prevVotes = {};
       podiumSignature = "";
+      endViewMode = "gate";
       seenComments.clear();
+      sessionOpenedAt = Date.now();
 
       state.config = { status: "waiting", showBars: true, roundId: newRound };
       state.candidates = resetCands;
@@ -903,7 +1052,9 @@
       prevVotes = {};
       renderedSignature = "";
       podiumSignature = "";
+      endViewMode = "gate";
       seenComments.clear();
+      sessionOpenedAt = Date.now();
 
       state.config = { status: "waiting", showBars: true, roundId: newRound };
       state.candidates = {};
@@ -919,17 +1070,12 @@
 
     window.clearComments = () => {
       seenComments.clear();
+      sessionOpenedAt = Date.now();
       const ids = Object.keys(state.comments || {});
       state.comments = {};
       const patches = {};
       ids.forEach(cid => { patches[`comments/${cid}`] = null; });
       if (ids.length > 0) update(ref(db), patches).catch(handleFbError);
-    };
-
-    window.toggleEndView = () => {
-      showAllBarsOnEnd = !showAllBarsOnEnd;
-      renderedSignature = "";
-      render();
     };
 
     window.toggleSound = () => {
@@ -951,6 +1097,7 @@
 
     window.setStatus = (status) => {
       state.config.status = status;
+      if (status === "ended") endViewMode = "gate";
       render();
 
       update(ref(db, "config"), {
@@ -975,7 +1122,8 @@
 
     window.celebrate = () => {
       playSfx("win");
-      confetti({ particleCount: 160, spread: 95, origin: { y: 0.6 } });
+      confetti({ particleCount: 110, angle: 60, spread: 75, origin: { x: 0.15, y: 0.65 } });
+      confetti({ particleCount: 110, angle: 120, spread: 75, origin: { x: 0.85, y: 0.65 } });
     };
 
     onValue(ref(db), snap => {
@@ -998,15 +1146,14 @@
         comments: val.comments || {}
       };
 
-      if (val.reaction && val.reaction.id !== lastEmojiId) {
-        lastEmojiId = val.reaction.id;
-        if (!firstLoad) spawnEmoji(val.reaction.emoji);
-      }
-
+      /* Hanya tampilkan komentar baru yang masuk setelah sesi dibuka (tidak reuse komentar lama) */
       Object.entries(state.comments || {}).forEach(([cid, item]) => {
         if (!seenComments.has(cid)) {
           seenComments.add(cid);
-          if (!firstLoad) spawnBubble(item.user || "", item.text, item.colorIdx ?? 0);
+          const isFresh = !firstLoad && (!item.at || item.at >= sessionOpenedAt - 5000);
+          if (isFresh) {
+            spawnBubble(item.user || "", item.text, item.colorIdx ?? 0);
+          }
         }
       });
 
@@ -1015,7 +1162,7 @@
     }, handleFbError);
 
     window.addEventListener("resize", () => {
-      if (state.config.status !== "ended" || showAllBarsOnEnd) render();
+      if (state.config.status !== "ended" || endViewMode === "bars") render();
     });
     render();
   </script>
