@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Election — IT Club</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #05070c;
+      color: #f8fafc;
+      overflow: hidden;
+    }
+    .font-display { font-family: 'Space Grotesk', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+
+    .cyber-grid {
+      background-size: 48px 48px;
+      background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    }
+
+    .ambient-orb {
+      transition: background 1.2s ease, opacity 1.2s ease;
+      filter: blur(115px);
+    }
+
+    /* Bar Horizontal ke Kanan */
+    .race-fill {
+      transition: width 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+      background-size: 28px 28px;
+    }
+    @keyframes stripeSlide {
+      0% { background-position: 0 0; }
+      100% { background-position: 28px 0; }
+    }
+    .race-stripes {
+      background-image: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.16) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.16) 50%,
+        rgba(255, 255, 255, 0.16) 75%,
+        transparent 75%,
+        transparent
+      );
+      animation: stripeSlide 1.1s linear infinite;
+    }
+
+    .candidate-row {
+      transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.4s ease;
+      will-change: transform;
+    }
+
+    @keyframes surgeGlow {
+      0% { filter: brightness(1.8); transform: scaleY(1.15); }
+      100% { filter: brightness(1); transform: scaleY(1); }
+    }
+    .bar-surge { animation: surgeGlow 0.55s ease-out; }
+
+    /* Gelembung Komentar Transparan */
+    @keyframes floatBubble {
+      0% { transform: translateY(25px) scale(0.88); opacity: 0; }
+      10% { opacity: 0.92; transform: translateY(0) scale(1); }
+      82% { opacity: 0.72; }
+      100% { transform: translateY(-86vh) scale(0.95); opacity: 0; }
+    }
+    .ghost-bubble {
+      position: fixed;
+      bottom: 24px;
+      pointer-events: none;
+      z-index: 40;
+      background: rgba(12, 15, 24, 0.42);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      animation: floatBubble 7.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes floatEmoji {
+      0% { transform: translateY(20px) scale(0.7) rotate(-8deg); opacity: 0; }
+      15% { opacity: 1; transform: translateY(-15px) scale(1.2) rotate(6deg); }
+      100% { transform: translateY(-82vh) scale(1.4) rotate(-8deg); opacity: 0; }
+    }
+    .floating-emoji {
+      position: fixed;
+      bottom: 20px;
+      pointer-events: none;
+      z-index: 41;
+      font-size: 2.6rem;
+      animation: floatEmoji 2.8s ease-out forwards;
+    }
+
+    @keyframes sparkPop {
+      0% { transform: translate(0, 0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+    }
+    .spark-dot {
+      position: fixed;
+      width: 7px;
+      height: 7px;
+      border-radius: 9999px;
+      pointer-events: none;
+      z-index: 45;
+      animation: sparkPop 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Podium Kahoot */
+    @keyframes podiumRise {
+      0% { transform: translateY(110%); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes winnerPop {
+      0% { transform: scale(0.6) translateY(20px); opacity: 0; }
+      70% { transform: scale(1.06) translateY(-4px); opacity: 1; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .podium-pillar-3 { animation: podiumRise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both; }
+    .podium-pillar-2 { animation: podiumRise 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both; }
+    .podium-pillar-1 { animation: podiumRise 0.85s cubic-bezier(0.16, 1, 0.3, 1) 1.05s both; }
+    .winner-card-reveal { animation: winnerPop 0.65s cubic-bezier(0.16, 1, 0.3, 1) 1.45s both; }
+    .runner-card-reveal { animation: winnerPop 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.85s both; }
+  </style>
+</head>
+<body class="h-screen flex flex-col justify-between p-5 sm:p-8 cyber-grid select-none relative">
+
+  <!-- Ambient Spotlight -->
+  <div id="orb-left" class="ambient-orb fixed -top-32 -left-24 w-[480px] h-[480px] rounded-full opacity-25 pointer-events-none" style="background: #6366f1;"></div>
+  <div id="orb-right" class="ambient-orb fixed -bottom-36 -right-24 w-[460px] h-[460px] rounded-full opacity-20 pointer-events-none" style="background: #06b6d4;"></div>
+
+  <!-- Layer Gelembung Komentar & Emoji -->
+  <div id="bubble-stage" class="fixed inset-0 pointer-events-none overflow-hidden z-40"></div>
+
+  <!-- HEADER -->
+  <header class="relative z-30 max-w-6xl w-full mx-auto flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md flex items-center justify-center font-display font-bold text-xl tracking-tighter text-white shadow-lg">
+        IT
+      </div>
+      <div>
+        <div class="flex flex-wrap items-center gap-2">
+          <span id="status-pill" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> LIVE VOTING
+          </span>
+          <span id="drama-pill" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white/5 text-slate-300 border border-white/10">
+            Menunggu suara...
+          </span>
+        </div>
+        <h1 class="font-display text-2xl sm:text-3xl font-bold tracking-tight mt-0.5 text-white">
+          Pemilihan Ketua IT Club
+        </h1>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex items-center gap-2">
+      <div class="hidden sm:flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-white/[0.04] border border-white/10 mr-1">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Suara</span>
+        <span id="total-votes" class="mono text-xl font-extrabold text-white">0</span>
+      </div>
+
+      <button onclick="toggleEndView()" id="end-view-btn" class="hidden px-3.5 py-2.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/30 text-indigo-300 text-xs font-bold transition">
+        📊 Lihat Semua Bar
+      </button>
+
+      <button onclick="toggleQr()" class="px-3.5 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-xs font-bold transition">
+        📱 QR Join
+      </button>
+      <button onclick="toggleSound()" id="sfx-btn" class="px-3.5 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-xs font-bold transition">
+        🔊 SFX
+      </button>
+      <button onclick="toggleBars()" class="px-3.5 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-xs font-bold transition">
+        👁️ Reveal
+      </button>
+      <button onclick="celebrate()" class="px-3.5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold transition shadow-lg shadow-amber-400/20">
+        🎉 Konfeti
+      </button>
+      <button onclick="toggleDrawer()" class="px-3.5 py-2.5 rounded-xl bg-white text-slate-950 hover:bg-slate-200 text-xs font-extrabold transition">
+        ⚙️ Panitia
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN STAGE -->
+  <main class="relative z-20 max-w-6xl w-full mx-auto my-auto py-4 flex-1 flex flex-col justify-center min-h-0">
+    <!-- VIEW A: HORIZONTAL RACE BARS -->
+    <div id="race-stage" class="w-full">
+      <div id="race-container" class="relative w-full"></div>
+    </div>
+
+    <!-- VIEW B: KAHOOT-STYLE PODIUM -->
+    <div id="podium-stage" class="hidden w-full h-full flex flex-col justify-end items-center pt-4">
+      <div id="podium-grid" class="w-full max-w-4xl grid grid-cols-3 gap-3 sm:gap-6 items-end h-[430px] sm:h-[470px] px-2"></div>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="relative z-30 max-w-6xl w-full mx-auto flex items-center justify-between text-xs text-slate-500">
+    <span id="fb-conn-status" class="mono text-[11px] text-amber-400">● Menghubungkan Firebase...</span>
+    <span class="hidden sm:inline text-slate-500">1 Perangkat = 1 Suara • Komentar melayang transparan di layar</span>
+    <span id="join-hint" class="mono text-slate-400"></span>
+  </footer>
+
+  <!-- MODAL QR CODE -->
+  <div id="qr-modal" onclick="toggleQr()" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+    <div onclick="event.stopPropagation()" class="bg-slate-900/95 border border-white/15 rounded-3xl p-7 max-w-xs w-full text-center space-y-4 shadow-2xl">
+      <p class="text-xs font-bold text-indigo-400 uppercase tracking-widest">Scan Untuk Memilih</p>
+      <div class="bg-white p-3.5 rounded-2xl inline-block mx-auto shadow-xl">
+        <img id="qr-img" alt="QR Code" class="w-52 h-52" />
+      </div>
+      <p id="qr-link" class="mono text-[11px] text-slate-300 bg-black/50 px-3 py-2 rounded-xl border border-white/10 break-all"></p>
+      <button onclick="toggleQr()" class="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold">Tutup</button>
+    </div>
+  </div>
+
+  <!-- DRAWER PANEL PANITIA ADVANCE -->
+  <div id="admin-drawer" onclick="toggleDrawer()" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden justify-end">
+    <div onclick="event.stopPropagation()" class="w-full max-w-lg bg-slate-950 border-l border-white/10 h-full flex flex-col">
+
+      <!-- Drawer Header -->
+      <div class="p-5 border-b border-white/10 flex items-center justify-between shrink-0">
+        <div>
+          <h2 class="font-display text-lg font-bold text-white">⚙️ Panel Kontrol Panitia</h2>
+          <p class="text-[11px] text-slate-400">Kelola sesi, tambah kandidat & input suara blind voting</p>
+        </div>
+        <button onclick="toggleDrawer()" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold flex items-center justify-center">✕</button>
+      </div>
+
+      <!-- Drawer Scrollable Body -->
+      <div class="flex-1 overflow-y-auto p-5 space-y-6">
+
+        <!-- 1. KONTROL SESI VOTING -->
+        <div class="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">1. Status Sesi Pemilihan</label>
+            <span id="admin-status-tag" class="mono text-[10px] font-bold px-2 py-0.5 rounded bg-white/10 text-slate-300">WAITING</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <button id="btn-st-waiting" onclick="setStatus('waiting')" class="py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold transition">
+              ⏳ Tunggu
+            </button>
+            <button id="btn-st-voting" onclick="setStatus('voting')" class="py-2.5 rounded-xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 text-xs font-bold transition">
+              🟢 Buka
+            </button>
+            <button id="btn-st-ended" onclick="setStatus('ended')" class="py-2.5 rounded-xl bg-white/5 hover:bg-rose-500/20 border border-white/10 text-xs font-bold transition">
+              🔴 Tutup
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button onclick="toggleBars()" id="admin-reveal-btn" class="py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-bold text-slate-300">
+              👁️ Sembunyikan Grafik
+            </button>
+            <button onclick="clearComments()" class="py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-bold text-slate-300">
+              🧹 Bersihkan Bubble Chat
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. TAMBAH KANDIDAT (PLAYER MODE) -->
+        <div class="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
+          <div>
+            <label class="text-[11px] font-bold text-indigo-300 uppercase tracking-wider block">2. Tambah Kandidat (Player)</label>
+            <p class="text-[11px] text-slate-400 mt-0.5">Pisahkan dengan <code class="px-1 py-0.5 rounded bg-white/10 text-white">|</code> untuk menambahkan visi singkat kecil.</p>
+          </div>
+
+          <form onsubmit="addCandidate(event)" class="flex gap-2">
+            <input
+              id="new-cand-input"
+              type="text"
+              placeholder="Contoh: Arya (8A) | Workshop Game Dev"
+              oninput="updateCandPreview(this.value)"
+              class="flex-1 min-w-0 bg-black/70 border border-white/15 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-slate-600 outline-none"
+              required
+            />
+            <button type="submit" class="px-4 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-extrabold text-xs shrink-0 transition shadow-lg shadow-indigo-500/20">
+              + Tambah
+            </button>
+          </form>
+
+          <!-- Live Parse Preview -->
+          <div id="cand-preview-box" class="hidden px-3 py-2 rounded-xl bg-indigo-500/10 border border-indigo-400/20 text-[11px] flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span class="text-slate-400">Preview:</span>
+            <span class="font-bold text-white" id="prev-name"></span>
+            <span id="prev-desc-wrap" class="hidden text-indigo-300">• <span id="prev-desc"></span></span>
+          </div>
+        </div>
+
+        <!-- 3. DAFTAR KANDIDAT & MANUAL VOTE (+1 / -1 BLIND VOTING) -->
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between px-1">
+            <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">3. Kandidat & Blind Voting (-1 / +1)</label>
+            <span id="admin-cand-count" class="mono text-[11px] text-slate-400">0 Kandidat</span>
+          </div>
+
+          <div id="admin-player-list" class="space-y-2">
+            <!-- Kartu kandidat + tombol -1 / +1 dirender via JS -->
+          </div>
+
+          <p class="text-[11px] text-slate-500 px-1 leading-relaxed">
+            Gunakan tombol <strong class="text-slate-300">-1</strong> / <strong class="text-slate-300">+1</strong> untuk mencatat suara anggota yang tidak membawa HP tanpa mereset suara yang sudah masuk.
+          </p>
+        </div>
+
+        <!-- 4. ZONA RESET (TERPISAH) -->
+        <div class="p-4 rounded-2xl bg-rose-950/20 border border-rose-500/25 space-y-3">
+          <div>
+            <label class="text-[11px] font-bold text-rose-400 uppercase tracking-wider block">4. Reset Voting (Terpisah)</label>
+            <p class="text-[11px] text-slate-400 mt-0.5">Mengosongkan suara & membuka kunci semua HP, daftar kandidat tetap aman.</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button onclick="resetVotesOnly()" class="py-2.5 px-3 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-xs font-bold transition">
+              🔄 Reset Suara & Kunci HP
+            </button>
+            <button onclick="wipeAllCandidates()" class="py-2.5 px-3 rounded-xl bg-white/5 hover:bg-rose-500/20 border border-white/10 text-slate-300 hover:text-rose-300 text-xs font-bold transition">
+              🗑️ Hapus Semua Kandidat
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, set, update, remove, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC_vFU6eqql9sFm2XYkAh6aEIK6OonAQkQ",
+      authDomain: "polling-5868a.firebaseapp.com",
+      databaseURL: "https://polling-5868a-default-rtdb.firebaseio.com",
+      projectId: "polling-5868a",
+      storageBucket: "polling-5868a.firebasestorage.app",
+      messagingSenderId: "916628617212",
+      appId: "1:916628617212:web:6b6f9997e58bf5edf22479"
+    };
+
+    const THEMES = [
+      { hex: "#f43f5e", grad: "from-rose-600 via-rose-500 to-orange-400", text: "text-rose-400", border: "border-rose-500/35", glow: "0 0 24px rgba(244,63,94,0.65)", dot: "bg-rose-400" },
+      { hex: "#06b6d4", grad: "from-blue-600 via-sky-500 to-cyan-300", text: "text-cyan-300", border: "border-cyan-400/35", glow: "0 0 24px rgba(6,182,212,0.65)", dot: "bg-cyan-400" },
+      { hex: "#a855f7", grad: "from-violet-600 via-purple-500 to-fuchsia-400", text: "text-fuchsia-300", border: "border-fuchsia-400/35", glow: "0 0 24px rgba(168,85,247,0.65)", dot: "bg-fuchsia-400" },
+      { hex: "#10b981", grad: "from-emerald-600 via-emerald-500 to-teal-300", text: "text-emerald-300", border: "border-emerald-400/35", glow: "0 0 24px rgba(16,185,129,0.65)", dot: "bg-emerald-400" },
+      { hex: "#f59e0b", grad: "from-amber-500 via-yellow-400 to-lime-300", text: "text-amber-300", border: "border-amber-400/35", glow: "0 0 24px rgba(245,158,11,0.65)", dot: "bg-amber-300" }
+    ];
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    let state = {
+      config: { status: "waiting", showBars: true, roundId: "r1" },
+      candidates: {},
+      voters: {},
+      comments: {}
+    };
+
+    let sfxOn = true;
+    let prevVotes = {};
+    let renderedSignature = "";
+    let podiumSignature = "";
+    let showAllBarsOnEnd = false;
+    let prevStatus = "";
+    let seenComments = new Set();
+    let firstLoad = true;
+    let lastEmojiId = null;
+    let lane = 0;
+
+    const esc = s => String(s || "").replace(/[&<>'"]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[m]));
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSfx(type) {
+      if (!sfxOn) return;
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === "vote") {
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(480, now);
+        osc.frequency.exponentialRampToValueAtTime(920, now + 0.14);
+        gain.gain.setValueAtTime(0.16, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        osc.start(now);
+        osc.stop(now + 0.18);
+      } else if (type === "win") {
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.type = "triangle";
+          o.connect(g);
+          g.connect(audioCtx.destination);
+          o.frequency.setValueAtTime(f, now + idx * 0.09);
+          g.gain.setValueAtTime(0.18, now + idx * 0.09);
+          g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.4);
+          o.start(now + idx * 0.09);
+          o.stop(now + idx * 0.09 + 0.4);
+        });
+      }
+    }
+
+    const voterUrl = window.location.href.replace(/host\.html.*$/, "index.html");
+    document.getElementById("join-hint").textContent = voterUrl.replace(/^https?:\/\//, "");
+    document.getElementById("qr-link").textContent = voterUrl;
+    document.getElementById("qr-img").src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(voterUrl)}`;
+
+    onValue(ref(db, ".info/connected"), snap => {
+      const el = document.getElementById("fb-conn-status");
+      if (snap.val() === true) {
+        el.textContent = "● Firebase Live Terhubung (1 Device = 1 Suara)";
+        el.className = "mono text-[11px] text-emerald-400";
+      } else {
+        el.textContent = "● Menghubungkan ke Firebase...";
+        el.className = "mono text-[11px] text-amber-400";
+      }
+    });
+
+    function spawnSparks(barEl, hexColor) {
+      if (!barEl) return;
+      const rect = barEl.getBoundingClientRect();
+      const originX = rect.right;
+      const originY = rect.top + rect.height / 2;
+
+      for (let i = 0; i < 10; i++) {
+        const dot = document.createElement("div");
+        dot.className = "spark-dot";
+        dot.style.background = i % 2 === 0 ? "#ffffff" : hexColor;
+        dot.style.left = `${originX}px`;
+        dot.style.top = `${originY}px`;
+        const angle = (Math.random() - 0.5) * Math.PI * 1.4;
+        const dist = 25 + Math.random() * 55;
+        dot.style.setProperty("--dx", `${Math.cos(angle) * dist}px`);
+        dot.style.setProperty("--dy", `${Math.sin(angle) * dist}px`);
+        document.body.appendChild(dot);
+        setTimeout(() => dot.remove(), 650);
+      }
+    }
+
+    function renderAdminPanel(rawEntries) {
+      const { status, showBars } = state.config;
+      document.getElementById("admin-status-tag").textContent = status.toUpperCase();
+
+      // Highlight tombol status aktif
+      const stMap = {
+        waiting: "bg-amber-500/20 border-amber-400/50 text-amber-300",
+        voting: "bg-emerald-500/25 border-emerald-400/60 text-emerald-300",
+        ended: "bg-rose-500/25 border-rose-400/60 text-rose-300"
+      };
+      ["waiting", "voting", "ended"].forEach(s => {
+        const btn = document.getElementById(`btn-st-${s}`);
+        btn.className = `py-2.5 rounded-xl border text-xs font-bold transition ${
+          status === s ? stMap[s] : "bg-white/5 hover:bg-white/10 border-white/10 text-slate-400"
+        }`;
+      });
+
+      document.getElementById("admin-reveal-btn").textContent = showBars
+        ? "🙈 Sembunyikan Grafik"
+        : "👁️ Tampilkan Grafik";
+
+      document.getElementById("admin-cand-count").textContent = `${rawEntries.length} Kandidat`;
+      const listEl = document.getElementById("admin-player-list");
+
+      if (rawEntries.length === 0) {
+        listEl.innerHTML = `
+          <div class="p-4 rounded-2xl bg-black/40 border border-dashed border-white/10 text-center text-xs text-slate-500">
+            Belum ada kandidat. Tambahkan lewat form di atas.
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = rawEntries.map(([id, c], i) => {
+        const th = THEMES[i % THEMES.length];
+        const votes = c.votes || 0;
+        return `
+          <div class="p-3 rounded-2xl bg-black/50 border border-white/10 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-gradient-to-br ${th.grad} text-slate-950 font-display font-extrabold text-xs flex items-center justify-center shrink-0">
+                0${i + 1}
+              </div>
+              <div class="min-w-0">
+                <div class="font-bold text-xs sm:text-sm text-white truncate">${esc(c.name)}</div>
+                ${c.desc ? `<div class="text-[11px] text-slate-400 truncate">${esc(c.desc)}</div>` : ''}
+              </div>
+            </div>
+
+            <!-- Kontrol -1 / +1 & Hapus -->
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onclick="adjustVote('${id}', -1)"
+                ${votes <= 0 ? 'disabled' : ''}
+                title="Kurangi 1 suara"
+                class="w-7 h-7 rounded-lg bg-white/5 hover:bg-rose-500/20 border border-white/10 text-slate-300 hover:text-rose-300 disabled:opacity-30 disabled:pointer-events-none font-bold text-xs flex items-center justify-center transition"
+              >
+                -1
+              </button>
+
+              <span class="mono w-9 text-center font-extrabold text-sm ${th.text}">
+                ${votes}
+              </span>
+
+              <button
+                type="button"
+                onclick="adjustVote('${id}', 1)"
+                title="Tambah 1 suara manual (Blind Voting)"
+                class="w-7 h-7 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 font-bold text-xs flex items-center justify-center transition active:scale-90"
+              >
+                +1
+              </button>
+
+              <button
+                type="button"
+                onclick="deleteCandidate('${id}')"
+                title="Hapus kandidat ini"
+                class="ml-1 w-7 h-7 rounded-lg bg-white/5 hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 text-xs flex items-center justify-center transition"
+              >
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderPodium(sorted, total) {
+      const top3 = sorted.slice(0, 3);
+      const sig = top3.map(x => `${x.id}:${x.votes}`).join("|");
+      if (sig === podiumSignature) return;
+      podiumSignature = sig;
+
+      const slots = [
+        { rank: 2, item: top3[1], pillarH: "h-48 sm:h-56", pillarBg: "from-slate-400/30 to-slate-600/20 border-slate-400/40", animPillar: "podium-pillar-2", animCard: "runner-card-reveal" },
+        { rank: 1, item: top3[0], pillarH: "h-64 sm:h-72", pillarBg: "from-amber-400/35 via-yellow-500/20 to-amber-600/10 border-amber-400/60 shadow-[0_0_50px_rgba(251,191,36,0.25)]", animPillar: "podium-pillar-1", animCard: "winner-card-reveal" },
+        { rank: 3, item: top3[2], pillarH: "h-36 sm:h-44", pillarBg: "from-orange-500/25 to-amber-800/15 border-orange-400/35", animPillar: "podium-pillar-3", animCard: "runner-card-reveal" }
+      ];
+
+      document.getElementById("podium-grid").innerHTML = slots.map(slot => {
+        if (!slot.item) return `<div></div>`;
+        const { item, rank } = slot;
+        const th = THEMES[item.originalIdx % THEMES.length];
+        const pct = total > 0 ? Math.round((item.votes / total) * 100) : 0;
+        const isChampion = rank === 1;
+
+        return `
+          <div class="flex flex-col items-center justify-end h-full">
+            <div class="${slot.animCard} w-full mb-3 text-center space-y-1.5 px-1">
+              ${isChampion ? `
+                <div class="text-4xl sm:text-5xl animate-bounce drop-shadow">👑</div>
+                <span class="inline-block px-3 py-1 rounded-full bg-amber-400 text-slate-950 font-extrabold text-[10px] sm:text-xs tracking-wider uppercase shadow-lg shadow-amber-400/30">
+                  KETUA IT CLUB
+                </span>
+              ` : ''}
+
+              <h3 class="font-display font-bold ${isChampion ? 'text-xl sm:text-2xl text-white' : 'text-base sm:text-lg text-slate-200'} truncate">
+                ${esc(item.name)}
+              </h3>
+              <div class="mono text-xs sm:text-sm font-extrabold ${isChampion ? 'text-amber-300' : th.text}">
+                ${pct}% <span class="text-slate-400 font-semibold">(${item.votes} suara)</span>
+              </div>
+            </div>
+
+            <div class="${slot.animPillar} w-full ${slot.pillarH} rounded-t-3xl bg-gradient-to-b ${slot.pillarBg} border-t-2 border-x backdrop-blur-md flex flex-col items-center justify-start pt-5 relative overflow-hidden">
+              <div class="font-display font-extrabold ${isChampion ? 'text-6xl sm:text-7xl text-amber-300' : 'text-4xl sm:text-5xl text-white/40'}">
+                ${rank}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function render() {
+      const { status, showBars } = state.config;
+      const pill = document.getElementById("status-pill");
+      const endBtn = document.getElementById("end-view-btn");
+
+      const statusCfg = {
+        waiting: ["⏳ MENUNGGU MULAI", "bg-amber-500/15 text-amber-300 border-amber-500/30"],
+        voting: ["● LIVE VOTING", "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"],
+        ended: ["🏁 PEMILIHAN SELESAI", "bg-rose-500/15 text-rose-400 border-rose-500/30"]
+      };
+      const cur = statusCfg[status] || statusCfg.waiting;
+      pill.textContent = cur[0];
+      pill.className = `inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${cur[1]}`;
+
+      if (status !== prevStatus) {
+        if (status === "ended") {
+          showAllBarsOnEnd = false;
+          podiumSignature = "";
+          if (!firstLoad) setTimeout(() => celebrate(), 1150);
+        }
+        prevStatus = status;
+      }
+
+      const rawEntries = Object.entries(state.candidates || {});
+      renderAdminPanel(rawEntries);
+
+      const total = rawEntries.reduce((sum, [, c]) => sum + (c.votes || 0), 0);
+      document.getElementById("total-votes").textContent = total;
+
+      const indexed = rawEntries.map(([id, c], originalIdx) => ({
+        id,
+        name: c.name,
+        desc: c.desc || "",
+        votes: c.votes || 0,
+        originalIdx
+      }));
+
+      const sorted = (showBars || status === "ended")
+        ? [...indexed].sort((a, b) => b.votes - a.votes || a.originalIdx - b.originalIdx)
+        : indexed;
+
+      const isPodiumActive = status === "ended" && !showAllBarsOnEnd && sorted.length > 0;
+      document.getElementById("race-stage").classList.toggle("hidden", isPodiumActive);
+      document.getElementById("podium-stage").classList.toggle("hidden", !isPodiumActive);
+      endBtn.classList.toggle("hidden", status !== "ended");
+      endBtn.textContent = showAllBarsOnEnd ? "🏆 Kembali ke Podium" : "📊 Lihat Semua Bar";
+
+      if (isPodiumActive) {
+        document.getElementById("drama-pill").textContent = `🏆 Selamat kepada ${sorted[0].name}!`;
+        document.getElementById("orb-left").style.background = "#f59e0b";
+        renderPodium(sorted, total);
+        return;
+      }
+
+      const container = document.getElementById("race-container");
+      if (rawEntries.length === 0) {
+        renderedSignature = "";
+        container.style.height = "auto";
+        container.innerHTML = `
+          <div class="p-12 rounded-3xl bg-white/[0.03] border border-dashed border-white/15 text-center space-y-2">
+            <p class="text-base font-bold text-slate-200">Belum ada kandidat terdaftar</p>
+            <p class="text-xs text-slate-400">Buka <strong class="text-white">⚙️ Panitia</strong> di kanan atas untuk menambahkan kandidat.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const sig = rawEntries.map(([id, c]) => `${id}:${c.name}:${c.desc}`).join("|");
+      if (sig !== renderedSignature) {
+        renderedSignature = sig;
+        container.innerHTML = rawEntries.map(([id, c], i) => {
+          const th = THEMES[i % THEMES.length];
+          return `
+            <div id="row-${id}" class="candidate-row absolute left-0 right-0 rounded-2xl bg-slate-900/75 backdrop-blur-md border border-white/10 p-4 sm:p-5 shadow-2xl">
+              <div class="flex items-center justify-between gap-4 mb-3">
+                <div class="flex items-center gap-3.5 min-w-0">
+                  <div id="rank-${id}" class="w-10 h-10 rounded-xl bg-white/10 border border-white/15 font-display font-bold text-base flex items-center justify-center shrink-0 text-white">
+                    #${i + 1}
+                  </div>
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                      <h2 class="font-display font-bold text-lg sm:text-xl text-white truncate">${esc(c.name)}</h2>
+                      <span id="crown-${id}" class="hidden text-lg">👑</span>
+                    </div>
+                    <p class="text-xs text-slate-400 truncate">${esc(c.desc || "")}</p>
+                  </div>
+                </div>
+
+                <div class="text-right shrink-0 flex items-baseline gap-3">
+                  <span id="votes-${id}" class="text-xs sm:text-sm font-bold text-slate-400">0 suara</span>
+                  <span id="pct-${id}" class="mono text-2xl sm:text-3xl font-extrabold ${th.text}">0%</span>
+                </div>
+              </div>
+
+              <div class="relative w-full h-5 bg-black/60 rounded-full p-1 border border-white/10 overflow-visible">
+                <div id="bar-${id}" class="race-fill race-stripes h-full rounded-full bg-gradient-to-r ${th.grad} relative" style="width: 3%;">
+                  <div class="absolute -right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border-2 border-slate-950 flex items-center justify-center text-[9px] font-extrabold text-slate-950 shadow-lg" style="box-shadow: ${th.glow};">
+                    ${i + 1}
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      const maxVotes = Math.max(...indexed.map(x => x.votes), 0);
+      const secondVotes = sorted.length > 1 ? sorted[1].votes : 0;
+      const effectiveShow = showBars || status === "ended";
+
+      const dramaEl = document.getElementById("drama-pill");
+      if (!effectiveShow) {
+        dramaEl.textContent = "🙈 Mode Rahasia — Hasil disembunyikan";
+      } else if (total === 0) {
+        dramaEl.textContent = "Menunggu suara pertama masuk...";
+      } else {
+        const leaderTheme = THEMES[sorted[0].originalIdx % THEMES.length];
+        document.getElementById("orb-left").style.background = leaderTheme.hex;
+        const diff = maxVotes - secondVotes;
+        if (diff === 0) dramaEl.textContent = "🔥 Imbang di puncak!";
+        else if (diff <= 2) dramaEl.textContent = `⚡ Kejar-kejaran ketat (selisih ${diff} suara)`;
+        else dramaEl.textContent = `👑 ${sorted[0].name} memimpin (+${diff} suara)`;
+      }
+
+      let currentY = 0;
+      const gap = 14;
+
+      sorted.forEach((item, rankIdx) => {
+        const rowEl = document.getElementById(`row-${item.id}`);
+        const rankEl = document.getElementById(`rank-${item.id}`);
+        const crownEl = document.getElementById(`crown-${item.id}`);
+        const votesEl = document.getElementById(`votes-${item.id}`);
+        const pctEl = document.getElementById(`pct-${item.id}`);
+        const barEl = document.getElementById(`bar-${item.id}`);
+        const th = THEMES[item.originalIdx % THEMES.length];
+
+        if (!rowEl) return;
+
+        rowEl.style.transform = `translateY(${currentY}px)`;
+        currentY += rowEl.offsetHeight + gap;
+
+        const isLeader = effectiveShow && total > 0 && item.votes === maxVotes;
+        const pct = total > 0 ? Math.round((item.votes / total) * 100) : 0;
+
+        rankEl.textContent = effectiveShow ? `#${rankIdx + 1}` : `#${item.originalIdx + 1}`;
+        rankEl.className = isLeader
+          ? `w-10 h-10 rounded-xl bg-gradient-to-br ${th.grad} text-slate-950 font-display font-extrabold text-base flex items-center justify-center shrink-0 shadow-lg`
+          : `w-10 h-10 rounded-xl bg-white/10 border border-white/15 font-display font-bold text-base flex items-center justify-center shrink-0 text-white`;
+
+        rowEl.style.borderColor = isLeader ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.08)";
+        crownEl.classList.toggle("hidden", !isLeader);
+
+        if (effectiveShow) {
+          votesEl.textContent = `${item.votes} suara`;
+          pctEl.textContent = `${pct}%`;
+          barEl.style.width = `${Math.max(pct, 3)}%`;
+          barEl.style.opacity = "1";
+        } else {
+          votesEl.textContent = "Tersembunyi";
+          pctEl.textContent = "??%";
+          barEl.style.width = "100%";
+          barEl.style.opacity = "0.25";
+        }
+
+        if (prevVotes[item.id] !== undefined && item.votes > prevVotes[item.id]) {
+          barEl.classList.remove("bar-surge");
+          void barEl.offsetWidth;
+          barEl.classList.add("bar-surge");
+          if (!firstLoad) {
+            playSfx("vote");
+            if (effectiveShow) spawnSparks(barEl, th.hex);
+          }
+        }
+        prevVotes[item.id] = item.votes;
+      });
+
+      container.style.height = `${Math.max(currentY - gap, 100)}px`;
+    }
+
+    function spawnBubble(user, text, colorIdx = 0) {
+      const th = THEMES[colorIdx % THEMES.length];
+      const el = document.createElement("div");
+      el.className = `ghost-bubble px-4 py-2 rounded-full border ${th.border} flex items-center gap-2 max-w-xs sm:max-w-md shadow-lg`;
+
+      const lanes = [6, 28, 52, 70];
+      const leftPos = lanes[lane % lanes.length] + (Math.random() * 5 - 2.5);
+      lane++;
+      el.style.left = `${Math.max(4, Math.min(72, leftPos))}%`;
+
+      const safeUser = user ? `<span class="font-extrabold ${th.text} shrink-0">${esc(user)}:</span>` : "";
+
+      el.innerHTML = `
+        <span class="w-2 h-2 rounded-full ${th.dot} shrink-0"></span>
+        <div class="text-xs sm:text-sm truncate">
+          ${safeUser}
+          <span class="font-medium text-white/95">${esc(text)}</span>
+        </div>
+      `;
+      document.getElementById("bubble-stage").appendChild(el);
+      setTimeout(() => el.remove(), 7500);
+    }
+
+    function spawnEmoji(emoji) {
+      const el = document.createElement("div");
+      el.className = "floating-emoji";
+      el.textContent = emoji;
+      el.style.left = `${10 + Math.random() * 80}%`;
+      document.getElementById("bubble-stage").appendChild(el);
+      setTimeout(() => el.remove(), 2800);
+    }
+
+    // ==================== ADMIN FUNCTIONS ====================
+    window.updateCandPreview = (raw) => {
+      const box = document.getElementById("cand-preview-box");
+      const trimmed = raw.trim();
+      if (!trimmed) {
+        box.classList.add("hidden");
+        return;
+      }
+      box.classList.remove("hidden");
+      const pipeIdx = trimmed.indexOf("|");
+      const name = (pipeIdx === -1 ? trimmed : trimmed.slice(0, pipeIdx)).trim();
+      const desc = (pipeIdx === -1 ? "" : trimmed.slice(pipeIdx + 1)).trim();
+
+      document.getElementById("prev-name").textContent = name || "...";
+      const descWrap = document.getElementById("prev-desc-wrap");
+      if (desc) {
+        descWrap.classList.remove("hidden");
+        document.getElementById("prev-desc").textContent = desc;
+      } else {
+        descWrap.classList.add("hidden");
+      }
+    };
+
+    window.addCandidate = async (e) => {
+      e.preventDefault();
+      const input = document.getElementById("new-cand-input");
+      const raw = input.value.trim();
+      if (!raw) return;
+
+      const pipeIdx = raw.indexOf("|");
+      const name = (pipeIdx === -1 ? raw : raw.slice(0, pipeIdx)).trim();
+      const desc = (pipeIdx === -1 ? "" : raw.slice(pipeIdx + 1)).trim();
+      if (!name) return;
+
+      const id = `c_${Date.now()}`;
+      input.value = "";
+      updateCandPreview("");
+
+      await set(ref(db, `candidates/${id}`), { name, desc, votes: 0 });
+    };
+
+    window.adjustVote = async (id, delta) => {
+      await runTransaction(ref(db, `candidates/${id}/votes`), (current) => {
+        const val = current || 0;
+        return Math.max(0, val + delta);
+      });
+    };
+
+    window.deleteCandidate = async (id) => {
+      const candName = state.candidates?.[id]?.name || "kandidat ini";
+      if (!confirm(`Hapus "${candName}" dari daftar kandidat?`)) return;
+      delete prevVotes[id];
+      await remove(ref(db, `candidates/${id}`));
+    };
+
+    window.resetVotesOnly = async () => {
+      if (!confirm("Reset semua suara menjadi 0 dan buka kembali kunci seluruh HP?\n(Daftar kandidat tidak akan dihapus)")) return;
+      const resetCands = {};
+      Object.entries(state.candidates || {}).forEach(([id, c]) => {
+        resetCands[id] = { ...c, votes: 0 };
+      });
+      const newRound = `r_${Date.now()}`;
+      prevVotes = {};
+      podiumSignature = "";
+      seenComments.clear();
+
+      await set(ref(db), {
+        config: { status: "waiting", showBars: true, roundId: newRound },
+        candidates: resetCands,
+        voters: {},
+        comments: {}
+      });
+    };
+
+    window.wipeAllCandidates = async () => {
+      if (!confirm("Hapus SEMUA kandidat beserta seluruh suara dan data voting?")) return;
+      const newRound = `r_${Date.now()}`;
+      prevVotes = {};
+      renderedSignature = "";
+      podiumSignature = "";
+      seenComments.clear();
+
+      await set(ref(db), {
+        config: { status: "waiting", showBars: true, roundId: newRound },
+        candidates: {},
+        voters: {},
+        comments: {}
+      });
+    };
+
+    window.clearComments = async () => {
+      seenComments.clear();
+      await set(ref(db, "comments"), {});
+    };
+
+    window.toggleEndView = () => {
+      showAllBarsOnEnd = !showAllBarsOnEnd;
+      renderedSignature = "";
+      render();
+    };
+
+    window.toggleSound = () => {
+      sfxOn = !sfxOn;
+      document.getElementById("sfx-btn").textContent = sfxOn ? "🔊 SFX" : "🔇 Mute";
+    };
+
+    window.toggleQr = () => {
+      const m = document.getElementById("qr-modal");
+      m.classList.toggle("hidden");
+      m.classList.toggle("flex");
+    };
+
+    window.toggleDrawer = () => {
+      const d = document.getElementById("admin-drawer");
+      d.classList.toggle("hidden");
+      d.classList.toggle("flex");
+    };
+
+    window.setStatus = async (status) => {
+      await update(ref(db, "config"), { status });
+    };
+
+    window.toggleBars = async () => {
+      const showBars = !state.config.showBars;
+      await update(ref(db, "config"), { showBars });
+      if (showBars) celebrate();
+    };
+
+    window.celebrate = () => {
+      playSfx("win");
+      confetti({ particleCount: 160, spread: 95, origin: { y: 0.6 } });
+    };
+
+    onValue(ref(db), snap => {
+      const val = snap.val();
+      if (!val) {
+        firstLoad = false;
+        render();
+        return;
+      }
+
+      state = {
+        config: val.config || { status: "waiting", showBars: true, roundId: "r1" },
+        candidates: val.candidates || {},
+        voters: val.voters || {},
+        comments: val.comments || {}
+      };
+
+      if (val.reaction && val.reaction.id !== lastEmojiId) {
+        lastEmojiId = val.reaction.id;
+        if (!firstLoad) spawnEmoji(val.reaction.emoji);
+      }
+
+      Object.entries(state.comments || {}).forEach(([cid, item]) => {
+        if (!seenComments.has(cid)) {
+          seenComments.add(cid);
+          if (!firstLoad) spawnBubble(item.user || "", item.text, item.colorIdx ?? 0);
+        }
+      });
+
+      render();
+      firstLoad = false;
+    });
+
+    window.addEventListener("resize", () => {
+      if (state.config.status !== "ended" || showAllBarsOnEnd) render();
+    });
+    render();
+  </script>
+</body>
+</html>
+
