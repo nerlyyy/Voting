@@ -29,7 +29,6 @@
       filter: blur(115px);
     }
 
-    /* Bar Horizontal ke Kanan */
     .race-fill {
       transition: width 0.85s cubic-bezier(0.16, 1, 0.3, 1);
       background-size: 28px 28px;
@@ -63,7 +62,6 @@
     }
     .bar-surge { animation: surgeGlow 0.55s ease-out; }
 
-    /* Gelembung Komentar Transparan */
     @keyframes floatBubble {
       0% { transform: translateY(25px) scale(0.88); opacity: 0; }
       10% { opacity: 0.92; transform: translateY(0) scale(1); }
@@ -109,7 +107,6 @@
       animation: sparkPop 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    /* Podium Kahoot */
     @keyframes podiumRise {
       0% { transform: translateY(110%); opacity: 0; }
       100% { transform: translateY(0); opacity: 1; }
@@ -134,6 +131,12 @@
 
   <!-- Layer Gelembung Komentar & Emoji -->
   <div id="bubble-stage" class="fixed inset-0 pointer-events-none overflow-hidden z-40"></div>
+
+  <!-- Banner Peringatan Firebase (Muncul otomatis jika databaseURL salah / Rules ke-lock) -->
+  <div id="fb-alert-banner" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-xl w-[92%] p-3.5 rounded-2xl bg-rose-950/95 border border-rose-500 text-rose-100 text-xs shadow-2xl flex items-center justify-between gap-3">
+    <span id="fb-alert-text" class="font-semibold leading-relaxed"></span>
+    <button onclick="document.getElementById('fb-alert-banner').classList.add('hidden')" class="px-2.5 py-1 rounded-lg bg-rose-500/30 font-bold shrink-0">✕</button>
+  </div>
 
   <!-- HEADER -->
   <header class="relative z-30 max-w-6xl w-full mx-auto flex flex-wrap items-center justify-between gap-4">
@@ -187,12 +190,10 @@
 
   <!-- MAIN STAGE -->
   <main class="relative z-20 max-w-6xl w-full mx-auto my-auto py-4 flex-1 flex flex-col justify-center min-h-0">
-    <!-- VIEW A: HORIZONTAL RACE BARS -->
     <div id="race-stage" class="w-full">
       <div id="race-container" class="relative w-full"></div>
     </div>
 
-    <!-- VIEW B: KAHOOT-STYLE PODIUM -->
     <div id="podium-stage" class="hidden w-full h-full flex flex-col justify-end items-center pt-4">
       <div id="podium-grid" class="w-full max-w-4xl grid grid-cols-3 gap-3 sm:gap-6 items-end h-[430px] sm:h-[470px] px-2"></div>
     </div>
@@ -221,7 +222,6 @@
   <div id="admin-drawer" onclick="toggleDrawer()" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden justify-end">
     <div onclick="event.stopPropagation()" class="w-full max-w-lg bg-slate-950 border-l border-white/10 h-full flex flex-col">
 
-      <!-- Drawer Header -->
       <div class="p-5 border-b border-white/10 flex items-center justify-between shrink-0">
         <div>
           <h2 class="font-display text-lg font-bold text-white">⚙️ Panel Kontrol Panitia</h2>
@@ -230,7 +230,6 @@
         <button onclick="toggleDrawer()" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold flex items-center justify-center">✕</button>
       </div>
 
-      <!-- Drawer Scrollable Body -->
       <div class="flex-1 overflow-y-auto p-5 space-y-6">
 
         <!-- 1. KONTROL SESI VOTING -->
@@ -278,12 +277,11 @@
               class="flex-1 min-w-0 bg-black/70 border border-white/15 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-slate-600 outline-none"
               required
             />
-            <button type="submit" class="px-4 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-extrabold text-xs shrink-0 transition shadow-lg shadow-indigo-500/20">
+            <button id="add-cand-btn" type="submit" class="px-4 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-extrabold text-xs shrink-0 transition shadow-lg shadow-indigo-500/20">
               + Tambah
             </button>
           </form>
 
-          <!-- Live Parse Preview -->
           <div id="cand-preview-box" class="hidden px-3 py-2 rounded-xl bg-indigo-500/10 border border-indigo-400/20 text-[11px] flex flex-wrap items-center gap-x-3 gap-y-1">
             <span class="text-slate-400">Preview:</span>
             <span class="font-bold text-white" id="prev-name"></span>
@@ -298,9 +296,7 @@
             <span id="admin-cand-count" class="mono text-[11px] text-slate-400">0 Kandidat</span>
           </div>
 
-          <div id="admin-player-list" class="space-y-2">
-            <!-- Kartu kandidat + tombol -1 / +1 dirender via JS -->
-          </div>
+          <div id="admin-player-list" class="space-y-2"></div>
 
           <p class="text-[11px] text-slate-500 px-1 leading-relaxed">
             Gunakan tombol <strong class="text-slate-300">-1</strong> / <strong class="text-slate-300">+1</strong> untuk mencatat suara anggota yang tidak membawa HP tanpa mereset suara yang sudah masuk.
@@ -335,7 +331,8 @@
     const firebaseConfig = {
       apiKey: "AIzaSyC_vFU6eqql9sFm2XYkAh6aEIK6OonAQkQ",
       authDomain: "polling-5868a.firebaseapp.com",
-      databaseURL: "https://polling-5868a-default-rtdb.firebaseio.com",
+      // Server Singapore (default Indonesia). Ubah ke .firebaseio.com jika RTDB kamu di US
+      databaseURL: "https://polling-5868a-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "polling-5868a",
       storageBucket: "polling-5868a.firebasestorage.app",
       messagingSenderId: "916628617212",
@@ -361,6 +358,7 @@
     };
 
     let sfxOn = true;
+    let isConnected = false;
     let prevVotes = {};
     let renderedSignature = "";
     let podiumSignature = "";
@@ -372,6 +370,29 @@
     let lane = 0;
 
     const esc = s => String(s || "").replace(/[&<>'"]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[m]));
+
+    function showFbAlert(msg) {
+      const box = document.getElementById("fb-alert-banner");
+      document.getElementById("fb-alert-text").textContent = msg;
+      box.classList.remove("hidden");
+    }
+
+    function handleFbError(err) {
+      console.error("Firebase Error:", err);
+      const code = err?.code || err?.message || "Unknown error";
+      if (String(code).includes("PERMISSION_DENIED")) {
+        showFbAlert("Ditolak Firebase (PERMISSION_DENIED)! Buka Firebase Console → Realtime Database → tab Rules → ubah .read & .write jadi true lalu Publish.");
+      } else {
+        showFbAlert(`Gagal menyimpan ke Firebase: ${code}`);
+      }
+    }
+
+    // Timeout deteksi jika databaseURL belum aktif / salah region
+    setTimeout(() => {
+      if (!isConnected) {
+        showFbAlert("Belum terhubung ke Firebase Realtime Database. Pastikan kamu sudah klik 'Create Database' di menu Realtime Database (server Singapore) dan cek databaseURL.");
+      }
+    }, 6000);
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playSfx(type) {
@@ -413,10 +434,12 @@
     document.getElementById("qr-img").src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(voterUrl)}`;
 
     onValue(ref(db, ".info/connected"), snap => {
+      isConnected = snap.val() === true;
       const el = document.getElementById("fb-conn-status");
-      if (snap.val() === true) {
+      if (isConnected) {
         el.textContent = "● Firebase Live Terhubung (1 Device = 1 Suara)";
         el.className = "mono text-[11px] text-emerald-400";
+        document.getElementById("fb-alert-banner").classList.add("hidden");
       } else {
         el.textContent = "● Menghubungkan ke Firebase...";
         el.className = "mono text-[11px] text-amber-400";
@@ -448,7 +471,6 @@
       const { status, showBars } = state.config;
       document.getElementById("admin-status-tag").textContent = status.toUpperCase();
 
-      // Highlight tombol status aktif
       const stMap = {
         waiting: "bg-amber-500/20 border-amber-400/50 text-amber-300",
         voting: "bg-emerald-500/25 border-emerald-400/60 text-emerald-300",
@@ -492,13 +514,11 @@
               </div>
             </div>
 
-            <!-- Kontrol -1 / +1 & Hapus -->
             <div class="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onclick="adjustVote('${id}', -1)"
                 ${votes <= 0 ? 'disabled' : ''}
-                title="Kurangi 1 suara"
                 class="w-7 h-7 rounded-lg bg-white/5 hover:bg-rose-500/20 border border-white/10 text-slate-300 hover:text-rose-300 disabled:opacity-30 disabled:pointer-events-none font-bold text-xs flex items-center justify-center transition"
               >
                 -1
@@ -511,7 +531,6 @@
               <button
                 type="button"
                 onclick="adjustVote('${id}', 1)"
-                title="Tambah 1 suara manual (Blind Voting)"
                 class="w-7 h-7 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 font-bold text-xs flex items-center justify-center transition active:scale-90"
               >
                 +1
@@ -520,7 +539,6 @@
               <button
                 type="button"
                 onclick="deleteCandidate('${id}')"
-                title="Hapus kandidat ini"
                 class="ml-1 w-7 h-7 rounded-lg bg-white/5 hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 text-xs flex items-center justify-center transition"
               >
                 🗑️
@@ -815,6 +833,7 @@
     window.addCandidate = async (e) => {
       e.preventDefault();
       const input = document.getElementById("new-cand-input");
+      const btn = document.getElementById("add-cand-btn");
       const raw = input.value.trim();
       if (!raw) return;
 
@@ -824,24 +843,41 @@
       if (!name) return;
 
       const id = `c_${Date.now()}`;
-      input.value = "";
-      updateCandPreview("");
+      btn.disabled = true;
+      btn.textContent = "...";
 
-      await set(ref(db, `candidates/${id}`), { name, desc, votes: 0 });
+      try {
+        await set(ref(db, `candidates/${id}`), { name, desc, votes: 0 });
+        input.value = "";
+        updateCandPreview("");
+      } catch (err) {
+        handleFbError(err);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "+ Tambah";
+      }
     };
 
     window.adjustVote = async (id, delta) => {
-      await runTransaction(ref(db, `candidates/${id}/votes`), (current) => {
-        const val = current || 0;
-        return Math.max(0, val + delta);
-      });
+      try {
+        await runTransaction(ref(db, `candidates/${id}/votes`), (current) => {
+          const val = current || 0;
+          return Math.max(0, val + delta);
+        });
+      } catch (err) {
+        handleFbError(err);
+      }
     };
 
     window.deleteCandidate = async (id) => {
       const candName = state.candidates?.[id]?.name || "kandidat ini";
       if (!confirm(`Hapus "${candName}" dari daftar kandidat?`)) return;
-      delete prevVotes[id];
-      await remove(ref(db, `candidates/${id}`));
+      try {
+        delete prevVotes[id];
+        await remove(ref(db, `candidates/${id}`));
+      } catch (err) {
+        handleFbError(err);
+      }
     };
 
     window.resetVotesOnly = async () => {
@@ -855,12 +891,16 @@
       podiumSignature = "";
       seenComments.clear();
 
-      await set(ref(db), {
-        config: { status: "waiting", showBars: true, roundId: newRound },
-        candidates: resetCands,
-        voters: {},
-        comments: {}
-      });
+      try {
+        await set(ref(db), {
+          config: { status: "waiting", showBars: true, roundId: newRound },
+          candidates: resetCands,
+          voters: {},
+          comments: {}
+        });
+      } catch (err) {
+        handleFbError(err);
+      }
     };
 
     window.wipeAllCandidates = async () => {
@@ -871,17 +911,25 @@
       podiumSignature = "";
       seenComments.clear();
 
-      await set(ref(db), {
-        config: { status: "waiting", showBars: true, roundId: newRound },
-        candidates: {},
-        voters: {},
-        comments: {}
-      });
+      try {
+        await set(ref(db), {
+          config: { status: "waiting", showBars: true, roundId: newRound },
+          candidates: {},
+          voters: {},
+          comments: {}
+        });
+      } catch (err) {
+        handleFbError(err);
+      }
     };
 
     window.clearComments = async () => {
-      seenComments.clear();
-      await set(ref(db, "comments"), {});
+      try {
+        seenComments.clear();
+        await set(ref(db, "comments"), {});
+      } catch (err) {
+        handleFbError(err);
+      }
     };
 
     window.toggleEndView = () => {
@@ -908,13 +956,21 @@
     };
 
     window.setStatus = async (status) => {
-      await update(ref(db, "config"), { status });
+      try {
+        await update(ref(db, "config"), { status });
+      } catch (err) {
+        handleFbError(err);
+      }
     };
 
     window.toggleBars = async () => {
       const showBars = !state.config.showBars;
-      await update(ref(db, "config"), { showBars });
-      if (showBars) celebrate();
+      try {
+        await update(ref(db, "config"), { showBars });
+        if (showBars) celebrate();
+      } catch (err) {
+        handleFbError(err);
+      }
     };
 
     window.celebrate = () => {
@@ -951,7 +1007,7 @@
 
       render();
       firstLoad = false;
-    });
+    }, handleFbError);
 
     window.addEventListener("resize", () => {
       if (state.config.status !== "ended" || showAllBarsOnEnd) render();
@@ -960,4 +1016,3 @@
   </script>
 </body>
 </html>
-
